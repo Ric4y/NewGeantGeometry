@@ -16,6 +16,7 @@
 #include "G4Box.hh"
 #include "G4Trd.hh"
 #include "G4Trap.hh"
+#include "G4Tubs.hh"
 #include "G4LogicalVolume.hh"
 #include "G4RotationMatrix.hh"
 #include "G4ThreeVector.hh"
@@ -402,71 +403,37 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     if (flag) {
 
-    //For Gap
-    G4double gap = 3*um;
+    //Standart Tube
+    G4double standInRadSize = 43.5*mm;
+    G4double standOutRadSize = 53.5*mm;
+    G4double standTubSizeZ = 328*mm;
 
-    //For Layer of paint
-    G4double layer = 20*um;
+    G4Tubs* solidStandTub = new G4Tubs("Tube", standInRadSize, standOutRadSize,
+                                       standTubSizeZ/2.0, 0.0, 2.0 * M_PI);
 
-    //Standart Cube
-    G4double standcub_sizeX = 3*mm;
-    G4double standcub_sizeY = 1*m;
-    G4double standcub_sizeZ = 3*mm;
+    //Bottom
+    G4double InRadSize = 0.0*mm;
+    G4double OutRadSize = standOutRadSize;
+    G4double TubSizeZ = 17*mm;
 
-    G4Box* solidStandCub = new G4Box("Cube", standcub_sizeX/2.0, standcub_sizeY/2.0, standcub_sizeZ/2.0);
+    G4Tubs* solidTub = new G4Tubs("Tube", InRadSize, OutRadSize, TubSizeZ/2.0, 0.0, 2.0 * M_PI);
 
-    //Cube with paint
-    G4double cub_sizeX = standcub_sizeX + 2 * layer;
-    G4double cub_sizeY = standcub_sizeY;
-    G4double cub_sizeZ = standcub_sizeZ + 2 * layer;
+    //Getting case
 
-    G4Box* solidCub = new G4Box("Cube", cub_sizeX/2.0, cub_sizeY/2.0, cub_sizeZ/2.0);
+    G4VSolid* solidCase = new G4UnionSolid("Case", solidStandTub, solidTub, 0, G4ThreeVector(0., 0., (standTubSizeZ - TubSizeZ)/2.0));
 
-    //Getting paint
+    G4Material* Stilbene = man->FindOrBuildMaterial("G4_STILBENE");
 
-    G4VSolid* solidPaint = new G4SubtractionSolid("Paint", solidCub, solidStandCub);
+    //Logical Volume for case
 
-    //Logical Volume for Paint
+    G4LogicalVolume* logicCase = new G4LogicalVolume(solidCase, Stilbene, "Case");
 
-    G4LogicalVolume* logicPaint = new G4LogicalVolume(solidPaint, Air, "Paint");
+    //Physical Volume for case
 
-    //Logical Volume for Standart Cube
+    G4VPhysicalVolume* physTube = new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicCase, "Case", logWorld, false, 0, 0);
 
-    G4LogicalVolume* logicStandCub = new G4LogicalVolume(solidStandCub, Air, "Cube");
+    logicCase->SetVisAttributes(GSolid);
 
-    //Part of 8*8 fibers
-    G4VPhysicalVolume* physFiber[64];
-    G4VPhysicalVolume* physPaint[64];
-    int i, j, k;
-
-    //i for couinting along X-axis, j for counting along Z-axis, k for forming series of fibers
-    i = 0;
-    j = 0;
-    k = 0;
-    std::string iMark;
-    std::string jMark;
-    //vector<G4VPhysicalVolume*> vPaint;
-    //vector<G4VPhysicalVolume*> vFiber;
-    while (i < 8) {
-        while (j < 8) {
-                std::string iMark = std::to_string(i);
-                std::string jMark = std::to_string(j);
-                string strBufCube = std::string("Cube") + std::string("_") + iMark + std::string("_") + jMark;
-                string strBufPaint = std::string("Paint") + std::string("_") + iMark + std::string("_") + jMark;
-                //Phys Volume for Paint
-                physPaint[k + j] = new G4PVPlacement(0, G4ThreeVector(i * (cub_sizeX + gap), 0, j * (cub_sizeZ + gap)), logicPaint, strBufPaint.c_str(), logWorld, false, 0, 0);
-                //Phys Volume for Standart Cube
-                physFiber[k + j] = new G4PVPlacement(0, G4ThreeVector(i * (cub_sizeX + gap), 0, j * (cub_sizeZ + gap)), logicStandCub, strBufCube.c_str(), logWorld, false, 0, 0);
-                j = j + 1;
-        } i = i + 1;
-        j = 0;
-        if (i == 1) {
-                k = k + 7;
-        } else {
-                k = k + 8;
-        }
-
-    }
 
 
     //Checking geometry
