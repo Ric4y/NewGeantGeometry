@@ -17,7 +17,7 @@
  #define TR_VERBOSE 0
 #endif /*TRACES*/
 
-//#define NOREFLECTOR // for absorption length measurement. switch off for light collection simulation
+#define NOREFLECTOR // for absorption length measurement. switch off for light collection simulation
 //#define SIMPLE_OPTICS // monochromatic photons, singular absorption length from the app input
 //#define NOABSORPTION // optical photons absorption switch
 //#define NORAYLEIGH // Rayleigh scattering switch for optical photons
@@ -30,4 +30,5 @@
 
 #define COLL_GAMMA // collimated gamma instead of ideal (0,1,0)
 
+#define NEW_GEOMETRY // New Detector using another geometry
 #endif /*LCVARS_h*/

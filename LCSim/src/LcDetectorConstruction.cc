@@ -78,6 +78,7 @@ G4int arg;
    */
 //--------------------------------------------------------------------------
 LcPMTSD* LcDetectorConstruction::pmt_SD;//SD
+G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
 #ifdef NOREFLECTOR
  #ifdef TRACES
 LcPMTSD* LcDetectorConstruction::csiAbs_SD;//SD
@@ -404,36 +405,191 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     if (flag) {
 
     //Standart Tube
-    G4double standInRadSize = 43.5*mm;
-    G4double standOutRadSize = 53.5*mm;
-    G4double standTubSizeZ = 328*mm;
+    G4double standInRadSize = 0.0*mm;
+    G4double standOutRadSize = 43.5*mm;
+    G4double standTubSizeZ = 57.0*mm;
 
-    G4Tubs* solidStandTub = new G4Tubs("Tube", standInRadSize, standOutRadSize,
-                                       standTubSizeZ/2.0, 0.0, 2.0 * M_PI);
+    G4Tubs* solidStandTub = new G4Tubs("solidStandTub", standInRadSize, standOutRadSize, standTubSizeZ/2.0, 0.0, 2.0 * M_PI);
 
-    //Bottom
-    G4double InRadSize = 0.0*mm;
-    G4double OutRadSize = standOutRadSize;
-    G4double TubSizeZ = 17*mm;
+    //Solid for side shell
+    G4double layer = 150.0*um;
+    G4double InRadSizeSide = standOutRadSize;
+    G4double OutRadSizeSide = standOutRadSize + 2.0 * layer;
+    G4double ShellSizeZSide = standTubSizeZ;
 
-    G4Tubs* solidTub = new G4Tubs("Tube", InRadSize, OutRadSize, TubSizeZ/2.0, 0.0, 2.0 * M_PI);
+    G4Tubs* solidShell = new G4Tubs("solidShell", InRadSizeSide, OutRadSizeSide, ShellSizeZSide/2.0, 0.0, 2.0 * M_PI);
 
-    //Getting case
+    //Solid for bottom
+    G4Tubs* solidBottom = new G4Tubs("solidBottom", standInRadSize, OutRadSizeSide, layer / 2.0, 0.0, 2.0 * M_PI);
 
-    G4VSolid* solidCase = new G4UnionSolid("Case", solidStandTub, solidTub, 0, G4ThreeVector(0., 0., (standTubSizeZ - TubSizeZ)/2.0));
+    //Solid for glue
+    G4double standGlueSizeZ = 20*um;
+
+    G4Tubs* solidGlue = new G4Tubs("solidGlue", standInRadSize, standOutRadSize, standGlueSizeZ/2.0, 0.0, 2.0 * M_PI);
+
 
     G4Material* Stilbene = man->FindOrBuildMaterial("G4_STILBENE");
+    G4Material* Al = man->FindOrBuildMaterial("G4_Al");
+    G4Material* Gl = man->FindOrBuildMaterial("G4_GLASS_PLATE");
 
-    //Logical Volume for case
+    //Logical Volume for Standart tube
 
-    G4LogicalVolume* logicCase = new G4LogicalVolume(solidCase, Stilbene, "Case");
+    G4LogicalVolume* logicStandTub = new G4LogicalVolume(solidStandTub, Stilbene, "logicStandTub");
+
+    //Logical Volume for glue
+
+    G4LogicalVolume* logicGlue = new G4LogicalVolume(solidGlue, siliconeRubber, "logicGlue");
+
+    //Logical Volume for side shell
+
+    G4LogicalVolume* logicShell = new G4LogicalVolume(solidShell, Al, "logicShell");
+
+    //Logical volume for bottom
+
+    G4LogicalVolume* logicBottom = new G4LogicalVolume(solidBottom, Al, "logicBottom");
 
     //Physical Volume for case
 
-    G4VPhysicalVolume* physTube = new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicCase, "Case", logWorld, false, 0, 0);
+    G4VPhysicalVolume* physStandTub = new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicStandTub, "physTube", logWorld, false, 0, 0);
 
-    logicCase->SetVisAttributes(GSolid);
+    //logicStandTub->SetVisAttributes(GSolid);
 
+    //Physical Volume for shell side
+
+    G4VPhysicalVolume* physShell = new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicShell, "physShell", logWorld, false, 0, 0);
+
+    //logicShell->SetVisAttributes(YSolid);
+
+    //Physical Volume for shell side
+
+    G4VPhysicalVolume* physBottom = new G4PVPlacement(0, G4ThreeVector(0, 0, - (standTubSizeZ + layer) / 2.0), logicBottom, "physBottom", logWorld, false, 0, 0);
+
+    //logicBottom->SetVisAttributes(YSolid);
+
+
+
+
+    //G4OpticalSurface* OpPmtSurface = new G4OpticalSurface("PmtSurface");
+    //OpPmtSurface->SetType(dielectric_metal);
+    //OpPmtSurface->SetFinish(polished);
+    //OpPmtSurface->SetModel(glisur);
+    //G4double Reflectivity_pmt[num] = {0.0};
+    //G4double Efficiency_pmt[num]   = {1.0};
+    //G4double RefractiveIndex_pmt[num] = {1.48};
+
+
+    //G4MaterialPropertiesTable *PmtOpTable = new G4MaterialPropertiesTable();
+    //PmtOpTable->AddProperty("REFLECTIVITY", Ephoton, Reflectivity_pmt, num);
+    //PmtOpTable->AddProperty("EFFICIENCY",   Ephoton, Efficiency_pmt,   num);
+    //PmtOpTable->AddProperty("RINDEX", Ephoton, RefractiveIndex_pmt, num);
+    //OpPmtSurface->SetMaterialPropertiesTable(PmtOpTable);
+
+
+
+
+
+
+
+
+    //Creating properties of optical surface
+     const G4int number = 1;
+    G4double OptPhoton[number] = {1.7*eV};
+    //G4double sigma_alpha=0.1;
+    G4double sigma_alpha_polished = 0.077;
+    G4double sigma_alpha_unpolished = 0.162;
+    G4double OptRefractivity[number] = {1};
+    //G4double SpecularLobe[num]    = {1};//refl. about facet normal //1
+    //G4double SpecularSpike[num]   = {0};//refl. about avg suface normal //0
+    G4double OptSpecularLobe[number]    = {0.01};//refl. about facet normal //1
+    G4double OptSpecularSpike[number]   = {1 - OptSpecularLobe[number]};//refl. about avg suface normal //0
+    G4double OptBackscatter[number]     = {0};//refl. in groove, //diffuse lobe constant
+    //G4double Reflectivity[num] = {0.98};
+    //G4double Efficiency[num]   = {0.02};
+    G4double OptReflectivity[number] = {0.9};
+    G4double OptEfficiency[number]   = {1 - OptReflectivity[number]};
+    //G4double Reflectivity[num] = {1.0};
+    //G4double Efficiency[num]   = {0.0};
+
+    G4MaterialPropertiesTable* PmtOpticsTable = new G4MaterialPropertiesTable();
+    PmtOpticsTable->AddProperty("RINDEXOPT", OptPhoton, OptRefractivity, number);
+    PmtOpticsTable->AddProperty("REFLECTIVITYOPT", OptPhoton, OptReflectivity, number);
+    PmtOpticsTable->AddProperty("EFFICIENCYOPT",   OptPhoton, OptEfficiency,   number);
+
+    G4OpticalSurface* OpticsPmtSurface = new G4OpticalSurface("OpticsPmtSurface");
+    OpticsPmtSurface->SetType(dielectric_metal);
+    OpticsPmtSurface->SetFinish(polished);
+    OpticsPmtSurface->SetModel(unified);
+    OpticsPmtSurface->SetMaterialPropertiesTable(PmtOpticsTable);
+
+
+
+
+
+
+
+
+
+    // PMT
+       // G4Box* SldPmt = new G4Box("PMT",outputCsI[4],outputCsI[3],PMTThickness/2.0);
+        //G4LogicalVolume* logPmt = new G4LogicalVolume(SldPmt,Air,"PMT",0,0,0);
+        //new G4PVPlacement(0,G4ThreeVector(-outputCsI[4],outputCsI[3],-GlassThickness-PMTThickness/2.0),logPmt,"PMT",logWorld,false,0);
+
+       // new G4LogicalSkinSurface("PmtSurface",logPmt, OpticsPmtSurface)
+
+
+
+
+    //Solid for glass window of pmt
+    G4double glassSizeZ = 100.0*um;
+
+    G4Tubs* solidWinPmt = new G4Tubs("solidWinPmt", standInRadSize, standOutRadSize, glassSizeZ/2.0, 0.0, 2.0 * M_PI);
+
+    //Solid for pmt
+    G4double pmtSizeZ = 2.0*cm;
+
+    G4Tubs* solidPmt = new G4Tubs("solidPmt", standInRadSize, standOutRadSize, pmtSizeZ/2.0, 0.0, 2.0 * M_PI);
+
+    //Logical volume for glass window
+    G4LogicalVolume* logicWinPmt = new G4LogicalVolume(solidWinPmt, Gl, "logicWinPmt");
+
+    //Logical volume for pmt
+    G4LogicalVolume* logicPmt = new G4LogicalVolume(solidPmt, Air, "logicWinPmt");
+
+    //Physical volume for glue between pmt and its window
+    G4VPhysicalVolume* PhysGluePmt = new G4PVPlacement(0, G4ThreeVector(0, 0, (standTubSizeZ + standGlueSizeZ)/ 2.0), logicGlue, "PhysGluePmt", logWorld, false, 0, 0);
+
+    //Physical volume for glass window
+    G4VPhysicalVolume* PhysWinPmt = new G4PVPlacement(0, G4ThreeVector(0, 0, (standTubSizeZ + glassSizeZ) / 2.0 + standGlueSizeZ), logicWinPmt, "PhysWinPmt", logWorld, false, 0, 0);
+
+    //Physical volume for pmt
+    G4VPhysicalVolume* PhysPmt = new G4PVPlacement(0, G4ThreeVector(0, 0, (standTubSizeZ + pmtSizeZ) / 2.0 + standGlueSizeZ + glassSizeZ), logicPmt, "PhysPmt", logWorld, false, 0, 0);
+
+    //logicPmt->SetVisAttributes(RSolid);
+
+    //Logical surface
+    G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmt,OpticsPmtSurface);
+
+    //logicGlue->SetVisAttributes(RSolid);
+    //logicWinPmt->SetVisAttributes(GSolid);
+
+    //Optical properties between physical volumes
+
+    G4LogicalBorderSurface* ShellScin = new G4LogicalBorderSurface("ShellScin", physShell, physStandTub, OpticsPmtSurface);
+
+    G4LogicalBorderSurface* BottomScin = new G4LogicalBorderSurface("BottomScin", physBottom, physStandTub, OpticsPmtSurface);
+
+    G4LogicalBorderSurface* GlueScin = new G4LogicalBorderSurface("GlueScin", PhysGluePmt, physStandTub, OpticsPmtSurface);
+
+    G4LogicalBorderSurface* GlueGlass = new G4LogicalBorderSurface("GlueGlass", PhysGluePmt, PhysWinPmt, OpticsPmtSurface);
+
+    G4LogicalBorderSurface* PmtGlass = new G4LogicalBorderSurface("PmtGlass", PhysPmt, PhysWinPmt, OpticsPmtSurface);
+
+    G4SDManager* SDman1 = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+        if(!pmt_SD){//check if pmt_SD does not exists otherwise create it
+            pmt_SD = new LcPMTSD("PMT1");
+            SDman1->AddNewDetector(pmt_SD); //now we've created the SD so it exists(no doubt)
+        }
+        logicPmt->SetSensitiveDetector(pmt_SD);
 
 
     //Checking geometry
@@ -546,8 +702,10 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 #else
     G4LogicalVolume* logCsI1 = new G4LogicalVolume(CsITra1,CsI,"CsI",0,0,0);
 #endif /*MATERIAL_VACUUM*/
+#ifndef NEW_GEOMETRY
     G4VPhysicalVolume* PhyCsI1 = new G4PVPlacement(
             zRot,G4ThreeVector(-outputCsI[7],outputCsI[8],outputCsI[9]),logCsI1,"CsI",logWorld,false,0);
+#endif /*NEW_GEOMETRY*/
     G4cout << "**************************************************\n";
     G4cout << ">>>>>>>>>> CsI geometry:\n";
     G4cout 
@@ -1374,7 +1532,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
         loggrt ->SetVisAttributes(BSolid);
 #endif /*NOREFLECTOR*/
 
-        // PMT
+#ifndef NEW_GEOMETRY      // PMT
         G4Box* SldPmt = new G4Box("PMT",outputCsI[4],outputCsI[3],PMTThickness/2.0);
         G4LogicalVolume* logPmt = new G4LogicalVolume(SldPmt,Air,"PMT",0,0,0);
         new G4PVPlacement(
@@ -1382,6 +1540,8 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
                 logPmt,"PMT",logWorld,false,0);
 
         new G4LogicalSkinSurface("PmtSurface",logPmt, OpPmtSurface);
+
+#endif /*NEW_GEOMETRY*/
 
 #ifndef NOREFLECTOR
         new G4LogicalBorderSurface("Surfacegrt",PhyCsI1,Phygrt,OpGLSurface_polished);
@@ -1391,16 +1551,19 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
         logPmtgl ->SetVisAttributes(BSolid);
 #endif /*NOREFLECTOR*/
+#ifndef NEW_GEOMETRY
         logPmt ->SetVisAttributes(Gr5Solid);
+#endif /*NEW_GEOMETRY*/
         /// --------------Sensitive Detector-------------------------------------------------
 
-        G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+        //G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
         if(!pmt_SD){//check if pmt_SD does not exists otherwise create it
             pmt_SD = new LcPMTSD("PMT1");
             SDman->AddNewDetector(pmt_SD); //now we've created the SD so it exists(no doubt)
         }
-        logPmt->SetSensitiveDetector(pmt_SD);
-
+#ifndef NEW_GEOMETRY
+       logPmt->SetSensitiveDetector(pmt_SD);
+#endif /*NEW_GEOMETRY*/
     }
     else if (detType == 3)
     {
@@ -1521,13 +1684,16 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
                 outputCsI[3]-APDSide/2.0-APDGap/2.0, 
                 -siliconeRubberThickness-EpoxyThickness-thicknessScale*APDThickness/2.0 - csiApdGap);
 #endif /*NOREFLECTOR*/
+
+#ifndef NEW_GEOMETRY
         G4ThreeVector posApd2 = G4ThreeVector(
-                -outputCsI[4], 
-                outputCsI[3]+APDSide/2.0+APDGap/2.0, 
+                -outputCsI[4],
+                outputCsI[3]+APDSide/2.0+APDGap/2.0,
                 -siliconeRubberThickness-EpoxyThickness-APDThickness/2.0);
 
         G4VPhysicalVolume* phyApd1 = new G4PVPlacement(
                         0, posApd1, logApd, "phyApd1", logWorld, false, 0);
+#endif /*NEW_GEOMETRY*/
 #ifndef NOREFLECTOR
         G4VPhysicalVolume* phyApd2 = new G4PVPlacement(
                         0, posApd2, logApd, "phyApd2", logWorld, false, 0);
@@ -1600,22 +1766,26 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 #endif /*NOREFLECTOR*/
         logApd->SetVisAttributes(YSolid);
 
+#ifndef NEW_GEOMETRY
         G4cout
             << ">>>> APD1 position: " << posApd1
             << "\n>>>> APD2 position: " << posApd2
             << G4endl;
+#endif /*NEW_GEOMETRY*/
 #ifndef NOREFLECTOR
         phyEpoxy->CheckOverlaps();
         phyApd2->CheckOverlaps();
         phyCeramic2ApdOut->CheckOverlaps();
 #endif /*NOREFLECTOR*/
-        phyApd1->CheckOverlaps();
+        //phyApd1->CheckOverlaps();
 
-        G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+        //G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+#ifndef NEW_GEOMETRY
         if (!pmt_SD)
         {
             pmt_SD = new LcPMTSD("PMT1");
             SDman->AddNewDetector(pmt_SD);
+//#endif /*NEW_GEOMETRY*/
 #ifdef NOREFLECTOR
  #ifdef TRACES
             if (!csiAbs_SD)
@@ -1623,9 +1793,12 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
                 csiAbs_SD = new LcPMTSD("PMT1000");
                 SDman->AddNewDetector(csiAbs_SD);
             }
- #endif /*TRACES*/
+
+
+#endif /*TRACES*/
 #endif /*NOREFLECTOR*/
         }
+#endif /*NEW_GEOMETRY*/
 #ifdef PHOTON_COUNTER
         if (!photonCounterSD)
         {
@@ -1633,7 +1806,9 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
             SDman->AddNewDetector(photonCounterSD);
         }
 #endif /*PHOTON_COUNTER*/
+//#ifndef NEW_GEOMETRY
         logApd->SetSensitiveDetector(pmt_SD);
+//#endif /*NEW_GEOMETRY*/
 #ifdef PHOTON_COUNTER
         logPhotonCounter->SetSensitiveDetector(photonCounterSD);
 #endif /*PHOTON_COUNTER*/
@@ -1655,9 +1830,11 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
         G4LogicalVolume* logSiliconeRubber = new G4LogicalVolume(
                 sldSiliconeRubber, siliconeRubber, "logSiliconeRubber", 0, 0, 0);
 
+#ifndef NEW_GEOMETRY
         G4VPhysicalVolume* phySiliconeRubber = new G4PVPlacement(
                 0, G4ThreeVector(-outputCsI[4], outputCsI[3], -siliconeRubberThickness/2.0),
                 logSiliconeRubber, "phySiliconeRubber", logWorld, false, 0);
+#endif /*NEW_GEOMETRY*/
 
         //epoxy
         //G4Box* sldEpoxy = new G4Box("sldEpoxy", CeramicWidth/2.0, CeramicHeight/2.0, GlassThickness/2.0);
@@ -1670,10 +1847,12 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
         //        0, G4ThreeVector(-outputCsI[4], outputCsI[3], -GlassThickness/2.0),
         //        logEpoxy, "phyEpoxy", logWorld, false, 0);
 
+#ifndef NEW_GEOMETRY
         G4VPhysicalVolume* phyEpoxy = new G4PVPlacement(
                 0, G4ThreeVector(
                     -outputCsI[4], outputCsI[3], -siliconeRubberThickness-EpoxyThickness/2.0),
                 logEpoxy, "phyEpoxy", logWorld, false, 0);
+#endif /*NEW_GEOMETRY*/
 
         //back esr
         //G4Box* sldEsrBackBulk = new G4Box(
@@ -1730,11 +1909,12 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
                 outputCsI[3]+outputCsI[3]/2.0+APDGap/2.0, 
                 -siliconeRubberThickness-EpoxyThickness-APDThickness/2.0);
 
+#ifndef NEW_GEOMETRY
         G4VPhysicalVolume* phyApd1 = new G4PVPlacement(
         		0, posApd1, logApd, "phyApd1", logWorld, false, 0);
         G4VPhysicalVolume* phyApd2 = new G4PVPlacement(
         		0, posApd2, logApd, "phyApd1", logWorld, false, 0);
-
+#endif /*NEW_GEOMETRY*/
         //ceramic transition vectors
         G4ThreeVector transEpoxy(0, 0, CeramicThickness/2.0-EpoxyThickness/2.0);
         //G4ThreeVector transApd1(
@@ -1767,6 +1947,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
                 "sldCeramic2ApdOut", sldCeramic1ApdOut, sldApd, 0, transApd2);
         G4LogicalVolume* logCeramic2ApdOut = new G4LogicalVolume(
                 sldCeramic2ApdOut, Ceramic, "logCeramic2ApdOut", 0, 0, 0);
+#ifndef NEW_GEOMETRY
 
         G4VPhysicalVolume* phyCeramic2ApdOut = new G4PVPlacement(
                 0, 
@@ -1775,6 +1956,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
                     outputCsI[3], 
                     -siliconeRubberThickness-CeramicThickness/2.0),
                 logCeramic2ApdOut, "phyCeramic2ApdOut", logWorld, false, 0);
+#endif /*NEW_GEOMETRY*/
 
         //new G4LogicalSkinSurface("apdSurface", logApd, OpPmtSurface);
         new G4LogicalSkinSurface("apdSurface", logApd, opApdSurface);
@@ -1794,13 +1976,21 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
             << ">>>> APD1 position: " << posApd1
             << "\n>>>> APD2 position: " << posApd2
             << G4endl;
+
+#ifndef NEW_GEOMETRY
         phyEpoxy->CheckOverlaps();
+
         //phyEsrBack->CheckOverlaps();
         phyApd1->CheckOverlaps();
         phyApd2->CheckOverlaps();
         phyCeramic2ApdOut->CheckOverlaps();
 
+#endif /*NEW_GEOMETRY*/
+
+#ifndef NEW_GEOMETRY
+
         G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+#endif /*NEW_GEOMETRY*/
         if (!pmt_SD)
         {
             pmt_SD = new LcPMTSD("PMT1");
@@ -1810,8 +2000,9 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     }
 
-
+#ifndef NEW_GEOMETRY
     G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+#endif /*NEW_GEOMETRY*/
     if(!CsI_SD){//check if CsI_SD does not exists otherwise create it
           CsI_SD = new LcCsISD("CsI1");
           SDman->AddNewDetector(CsI_SD);//now we've created the SD so it exists(no doubt)
@@ -1837,9 +2028,9 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     logESRLeft1->SetVisAttributes(GWire);
     logESRTop1->SetVisAttributes(GWire);
 #endif /*NOREFLECTOR*/
-
+#ifndef NEW_GEOMETRY
     PhyCsI1->CheckOverlaps();
-
+#endif /*NEW_GEOMETRY*/
 #ifndef NOREFLECTOR
     //PhyPmtgl->CheckOverlaps();
     //PhyPmt->CheckOverlaps();
