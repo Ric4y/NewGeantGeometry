@@ -427,10 +427,50 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     G4Tubs* solidGlue = new G4Tubs("solidGlue", standInRadSize, standOutRadSize, standGlueSizeZ/2.0, 0.0, 2.0 * M_PI);
 
-
+    //Using materials
     G4Material* Stilbene = man->FindOrBuildMaterial("G4_STILBENE");
     G4Material* Al = man->FindOrBuildMaterial("G4_Al");
     G4Material* Gl = man->FindOrBuildMaterial("G4_GLASS_PLATE");
+
+
+
+
+
+
+
+
+
+    CsITable->AddConstProperty("FASTTIMECONSTANT", 0.68*us);
+    CsITable->AddConstProperty("SLOWTIMECONSTANT", 3.34*us);
+    CsI->SetMaterialPropertiesTable(CsITable);
+
+
+    //Optical properties of Stilbene
+    const G4int numStilb = 1;
+    G4double photEnergyStilb[numStilb] = {1.9*eV}; //from Inradoptics, article: "Stilbene for Fast Neutron Detection"
+    G4double fastSpectrumStilb[numStilb] = {1.0};
+    G4double PhotonEnergySpectrLambdaStilb[numStilb] = {380*nm}; // photEnergyStilb/200
+    G4double AbsorbtionSpectrumStilb[numStilb] = {1.5*m};
+    G4double RefractIndSpectrumStilb[numStilb] = {1.626}; //from Leo
+
+    G4MaterialPropertiesTable* StilbTable = new G4MaterialPropertiesTable();
+    StilbTable->AddProperty("RINDEX", photEnergyStilb, RefractIndSpectrumStilb, numStilb);
+    StilbTable->AddProperty("ABSLENGTH", PhotonEnergySpectrLambdaStilb, AbsorbtionSpectrumStilb, numStilb);
+    StilbTable->AddProperty("FASTCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
+    StilbTable->AddProperty("SLOWCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
+    //StilbTable->AddConstProperty("SCINTILLATIONYIELD", 6720.0/(1.0*MeV));
+    StilbTable->AddConstProperty("SCINTILLATIONYIELD", 2.0e1/(0.662*MeV));
+    CsITable->AddConstProperty("RESOLUTIONSCALE", 0.01);
+    CsITable->AddConstProperty("YIELDRATIO", 1.00);
+    StilbTable->AddConstProperty("FASTTIMECONSTANT", 0.36*ns); //from Leo
+    StilbTable->AddConstProperty("SLOWTIMECONSTANT", 4.5*ns);
+    Stilbene->SetMaterialPropertiesTable(StilbTable);
+
+
+
+
+
+
 
     //Logical Volume for Standart tube
 
@@ -467,76 +507,69 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     //logicBottom->SetVisAttributes(YSolid);
 
 
-
-
-    //G4OpticalSurface* OpPmtSurface = new G4OpticalSurface("PmtSurface");
-    //OpPmtSurface->SetType(dielectric_metal);
-    //OpPmtSurface->SetFinish(polished);
-    //OpPmtSurface->SetModel(glisur);
-    //G4double Reflectivity_pmt[num] = {0.0};
-    //G4double Efficiency_pmt[num]   = {1.0};
-    //G4double RefractiveIndex_pmt[num] = {1.48};
-
-
-    //G4MaterialPropertiesTable *PmtOpTable = new G4MaterialPropertiesTable();
-    //PmtOpTable->AddProperty("REFLECTIVITY", Ephoton, Reflectivity_pmt, num);
-    //PmtOpTable->AddProperty("EFFICIENCY",   Ephoton, Efficiency_pmt,   num);
-    //PmtOpTable->AddProperty("RINDEX", Ephoton, RefractiveIndex_pmt, num);
-    //OpPmtSurface->SetMaterialPropertiesTable(PmtOpTable);
-
-
-
-
-
-
-
-
-    //Creating properties of optical surface
-     const G4int number = 1;
-    G4double OptPhoton[number] = {1.7*eV};
+    //Creating properties of optical surface dielectric - metal
+    const G4int number = 1;
+    G4double OptPhoton[number] = {1.9*eV};
     //G4double sigma_alpha=0.1;
     G4double sigma_alpha_polished = 0.077;
     G4double sigma_alpha_unpolished = 0.162;
-    G4double OptRefractivity[number] = {1};
+    //G4double OptRefractivityDM[number] = {1.0};
     //G4double SpecularLobe[num]    = {1};//refl. about facet normal //1
     //G4double SpecularSpike[num]   = {0};//refl. about avg suface normal //0
     G4double OptSpecularLobe[number]    = {0.01};//refl. about facet normal //1
     G4double OptSpecularSpike[number]   = {1 - OptSpecularLobe[number]};//refl. about avg suface normal //0
     G4double OptBackscatter[number]     = {0};//refl. in groove, //diffuse lobe constant
+    G4double AbsorptionSpectrumDM[number] = {};
+    G4double ScintilFastSpectrumDM[number] = {};
+
     //G4double Reflectivity[num] = {0.98};
     //G4double Efficiency[num]   = {0.02};
-    G4double OptReflectivity[number] = {0.9};
-    G4double OptEfficiency[number]   = {1 - OptReflectivity[number]};
+    G4double OptReflectivityDM[number] = {0.0};
+    G4double OptEfficiencyDM[number]   = {1 - OptReflectivityDM[number]};
     //G4double Reflectivity[num] = {1.0};
     //G4double Efficiency[num]   = {0.0};
 
-    G4MaterialPropertiesTable* PmtOpticsTable = new G4MaterialPropertiesTable();
-    PmtOpticsTable->AddProperty("RINDEXOPT", OptPhoton, OptRefractivity, number);
-    PmtOpticsTable->AddProperty("REFLECTIVITYOPT", OptPhoton, OptReflectivity, number);
-    PmtOpticsTable->AddProperty("EFFICIENCYOPT",   OptPhoton, OptEfficiency,   number);
+    G4MaterialPropertiesTable* PmtOpticsTableDM = new G4MaterialPropertiesTable();
+    //PmtOpticsTableDM->AddProperty("RINDEXOPTDM", OptPhoton, OptRefractivityDM, number);
+    PmtOpticsTableDM->AddProperty("REFLECTIVITY", OptPhoton, OptReflectivityDM, number);
+    PmtOpticsTableDM->AddProperty("EFFICIENCY",   OptPhoton, OptEfficiencyDM, number);
 
-    G4OpticalSurface* OpticsPmtSurface = new G4OpticalSurface("OpticsPmtSurface");
-    OpticsPmtSurface->SetType(dielectric_metal);
-    OpticsPmtSurface->SetFinish(polished);
-    OpticsPmtSurface->SetModel(unified);
-    OpticsPmtSurface->SetMaterialPropertiesTable(PmtOpticsTable);
-
-
+    G4OpticalSurface* OpticsPmtSurfaceDM = new G4OpticalSurface("OpticsPmtSurfaceDM");
+    OpticsPmtSurfaceDM->SetType(dielectric_metal);
+    OpticsPmtSurfaceDM->SetFinish(polished);
+    OpticsPmtSurfaceDM->SetModel(unified);
+    OpticsPmtSurfaceDM->SetMaterialPropertiesTable(PmtOpticsTableDM);
 
 
+    //Creating properties of optical surface dielectric - dielectric
+     //const G4int numb = 1;
+    //G4double OptPhoton[numb] = {1.7*eV};
+    //G4double sigma_alpha=0.1;
+    //G4double sigma_alpha_polished = 0.077;
+    //G4double sigma_alpha_unpolished = 0.162;
+    G4double OptRefractivityDD[number] = {1.5};
+    //G4double SpecularLobe[num]    = {1};//refl. about facet normal //1
+    //G4double SpecularSpike[num]   = {0};//refl. about avg suface normal //0
+    //G4double OptSpecularLobe[number]    = {0.01};//refl. about facet normal //1
+    //G4double OptSpecularSpike[number]   = {1 - OptSpecularLobe[number]};//refl. about avg suface normal //0
+    //G4double OptBackscatter[number]     = {0};//refl. in groove, //diffuse lobe constant
+    //G4double Reflectivity[num] = {0.98};
+    //G4double Efficiency[num]   = {0.02};
+    G4double OptReflectivityDD[number] = {0.0};
+    G4double OptEfficiencyDD[number]   = {1 - OptReflectivityDD[number]};
+    //G4double Reflectivity[num] = {1.0};
+    //G4double Efficiency[num]   = {0.0};
 
+    G4MaterialPropertiesTable* PmtOpticsTableDD = new G4MaterialPropertiesTable();
+    PmtOpticsTableDD->AddProperty("RINDEX", OptPhoton, OptRefractivityDD, number);
+    PmtOpticsTableDD->AddProperty("REFLECTIVITY", OptPhoton, OptReflectivityDD, number);
+    PmtOpticsTableDD->AddProperty("EFFICIENCY",   OptPhoton, OptEfficiencyDD,   number);
 
-
-
-
-    // PMT
-       // G4Box* SldPmt = new G4Box("PMT",outputCsI[4],outputCsI[3],PMTThickness/2.0);
-        //G4LogicalVolume* logPmt = new G4LogicalVolume(SldPmt,Air,"PMT",0,0,0);
-        //new G4PVPlacement(0,G4ThreeVector(-outputCsI[4],outputCsI[3],-GlassThickness-PMTThickness/2.0),logPmt,"PMT",logWorld,false,0);
-
-       // new G4LogicalSkinSurface("PmtSurface",logPmt, OpticsPmtSurface)
-
-
+    G4OpticalSurface* OpticsPmtSurfaceDD = new G4OpticalSurface("OpticsPmtSurfaceDD");
+    OpticsPmtSurfaceDD->SetType(dielectric_dielectric);
+    OpticsPmtSurfaceDD->SetFinish(polished);
+    OpticsPmtSurfaceDD->SetModel(unified);
+    OpticsPmtSurfaceDD->SetMaterialPropertiesTable(PmtOpticsTableDD);
 
 
     //Solid for glass window of pmt
@@ -567,22 +600,22 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     //logicPmt->SetVisAttributes(RSolid);
 
     //Logical surface
-    G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmt,OpticsPmtSurface);
+    G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmt,OpticsPmtSurfaceDD);
 
     //logicGlue->SetVisAttributes(RSolid);
     //logicWinPmt->SetVisAttributes(GSolid);
 
     //Optical properties between physical volumes
 
-    G4LogicalBorderSurface* ShellScin = new G4LogicalBorderSurface("ShellScin", physShell, physStandTub, OpticsPmtSurface);
+    G4LogicalBorderSurface* ShellScin = new G4LogicalBorderSurface("ShellScin", physShell, physStandTub, OpticsPmtSurfaceDM);
 
-    G4LogicalBorderSurface* BottomScin = new G4LogicalBorderSurface("BottomScin", physBottom, physStandTub, OpticsPmtSurface);
+    G4LogicalBorderSurface* BottomScin = new G4LogicalBorderSurface("BottomScin", physBottom, physStandTub, OpticsPmtSurfaceDM);
 
-    G4LogicalBorderSurface* GlueScin = new G4LogicalBorderSurface("GlueScin", PhysGluePmt, physStandTub, OpticsPmtSurface);
+    G4LogicalBorderSurface* GlueScin = new G4LogicalBorderSurface("GlueScin", PhysGluePmt, physStandTub, OpticsPmtSurfaceDD);
 
-    G4LogicalBorderSurface* GlueGlass = new G4LogicalBorderSurface("GlueGlass", PhysGluePmt, PhysWinPmt, OpticsPmtSurface);
+    G4LogicalBorderSurface* GlueGlass = new G4LogicalBorderSurface("GlueGlass", PhysGluePmt, PhysWinPmt, OpticsPmtSurfaceDD);
 
-    G4LogicalBorderSurface* PmtGlass = new G4LogicalBorderSurface("PmtGlass", PhysPmt, PhysWinPmt, OpticsPmtSurface);
+    G4LogicalBorderSurface* PmtGlass = new G4LogicalBorderSurface("PmtGlass", PhysPmt, PhysWinPmt, OpticsPmtSurfaceDD);
 
     G4SDManager* SDman1 = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
         if(!pmt_SD){//check if pmt_SD does not exists otherwise create it

@@ -114,11 +114,11 @@ G4bool LcPMTSD::ProcessHits(G4Step* aStep, G4TouchableHistory* )
 
     //G4double edep = aStep->GetTotalEnergyDeposit();
     G4double edep = photonEnergy;
-#ifndef NOREFLECTOR
+#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
     if(edep == 0.) return false;
 #endif /*NOREFLECTOR*/
     LcPMTHit* newHit = new LcPMTHit();
-#ifndef NOREFLECTOR
+#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
     newHit->SetWavelength(1.2398/edep/1000.);//conversion of photon energy to wavelength: 
                                              //lambda=hbar*c/E
 #else

@@ -85,7 +85,7 @@ extern LcTreeHandler* RootTreeHandler;
 extern LcUserTraceCollection* userTraceCollection;
 extern LcUserTraceCollection* primTraceCollection;
 //extern LcUserTraceCollection* gammTraceCollection;
-#ifdef NOREFLECTOR
+#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
 int detectedCounter = 0;
 #endif /*NOREFLECTOR*/
 
@@ -279,7 +279,7 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
             (HitEvent.creatorProcessID).push_back(
                     primTraceCollection->GetTrace(aHit->GetTrackID())->GetCreatorProcessID());
             //G4cout << "check1" << G4endl;
-#ifndef NOREFLECTOR
+#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
             LcUserTrace* parentTrace=primTraceCollection->GetTrace(
                     primTraceCollection->GetTrace(aHit->GetTrackID())->GetParentTrackID());
             (HitEvent.creatorOfCreatorProcessID).push_back(parentTrace->GetCreatorProcessID());
@@ -300,7 +300,7 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
                         (double)primTraceCollection->GetTrace(aHit->GetTrackID())->GetProcessID(j));
                 //if (primTraceCollection->GetTrace(aHit->GetTrackID())->GetProcessID(j) == 20)
 #ifdef TRACES
-#ifdef NOREFLECTOR
+#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
                 if (primTraceCollection->GetTrace(aHit->GetTrackID())->GetProcessID(j) == 
                         G4OpBoundaryProcessStatus::Detection + 10)
                 {// detection
@@ -314,7 +314,7 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
             (HitEvent.rz).push_back(zContainer);
             (HitEvent.processID).push_back(processIdContainer);
 
-#ifndef NOREFLECTOR
+#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
             LcUserTrace* gammaParentTrace=primTraceCollection->GetTrace(aHit->GetTrackID());
             while (gammaParentTrace->GetParticleName()!="gamma")
             {
@@ -325,7 +325,7 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
 #endif /*TRACES*/
         }
 #ifdef TRACES
-#ifdef NOREFLECTOR
+#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
         G4cout << "Photons shot: " << HitEvent.eventID + 1 << "; detected: " << detectedCounter << G4endl;
 #endif /*NOREFLECTOR*/
 #endif /*TRACES*/

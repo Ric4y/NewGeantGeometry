@@ -115,7 +115,7 @@ void LcSteppingAction::UserSteppingAction(const G4Step* theStep)
         //Otherwise the boundary status may not be valid
         //Prior to Geant4.6.0-p1 this would not have been enough to check
 
-#ifdef NOREFLECTOR
+#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
         if (thePostPoint->GetPhysicalVolume()->GetName() == "phyApd1")
         {
             primTraceCollection->AddTrace(theTrack, G4OpBoundaryProcessStatus::Detection);
@@ -144,7 +144,7 @@ void LcSteppingAction::UserSteppingAction(const G4Step* theStep)
             } // switch(boundaryStatus)
         } // if(thePostPoint->GetStepStatus()==fGeomBoundary)
     } // if(particleType==G4OpticalPhoton::OpticalPhotonDefinition())
-#ifndef NOREFLECTOR
+#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
 #ifdef TRACES
     if (boundary)
     {

@@ -14,7 +14,7 @@
 #include <math.h>
 
 #include "LcVars.hh"
-#ifdef NOREFLECTOR
+#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
  #include <stdlib.h>
  #include <time.h>
  //#include "RandomEngine.h"
@@ -53,7 +53,7 @@ LcPrimaryGeneratorAction::LcPrimaryGeneratorAction(int crType, int posFrac)
   gunMessenger = new LcPrimaryGeneratorMessenger(this);
   //default kinematic  //
   G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
-#ifndef NOREFLECTOR 
+#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
   G4ParticleDefinition* particle = particleTable->FindParticle("gamma");
 #else
   G4ParticleDefinition* particle = particleTable->FindParticle("opticalphoton");
@@ -85,7 +85,7 @@ LcPrimaryGeneratorAction::LcPrimaryGeneratorAction(int crType, int posFrac)
   gammaDistY = -93.0;// mm
   gammaDistX =  -7.5;// mm
 #endif /*COLL_GAMMA*/
-#ifndef NOREFLECTOR 
+#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, 60.0*mm, pos*mm)); 
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, -60.0*mm, pos*mm)); 
   particleGun->SetParticlePosition(G4ThreeVector(gammaDistX*mm, gammaDistY*mm, pos*mm)); 
@@ -100,8 +100,8 @@ LcPrimaryGeneratorAction::LcPrimaryGeneratorAction(int crType, int posFrac)
   particleGun->SetParticlePosition(G4ThreeVector(0, 17.045*mm, (170.0 + 20.0*(double)crType)*mm));
   particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0,0.0,-1.0));
 #ifdef NEW_GEOMETRY
-    particleGun->SetParticlePosition(G4ThreeVector(0, -43.5*mm - 150*um - 2*cm, 0));
-  particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0,1.0,0.0));
+    particleGun->SetParticlePosition(G4ThreeVector(0, 70.0*mm, 0));
+  particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0,-2.0,0.0));
   particleGun->SetParticleEnergy(0.662*MeV);
 #endif /*NEW_GEOMETRY*/
 #endif /*NOREFLECTOR*/
@@ -118,7 +118,7 @@ LcPrimaryGeneratorAction::~LcPrimaryGeneratorAction()
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 void LcPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-#ifdef NOREFLECTOR
+#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
  #ifndef SIMPLE_OPTICS
   G4double redLimit = 800.0;// nm
   G4double blueLimit = 300.0;// nm

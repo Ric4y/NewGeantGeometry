@@ -81,7 +81,7 @@ G4bool LcAPDSD::ProcessHits_constStep( const G4Step* aStep,G4TouchableHistory*)
    //newHit->SetEdep     (edep);
    //newHit->SetAPDPhysVol(physVol);
    //newHit->SetPos      (aStep->GetPostStepPoint()->GetPosition());
-#ifndef NOREFLECTOR
+#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
    newHit->SetWavelength(1.2398/edep/1000.);
 #else
    newHit->SetWavelength(1239.8/aStep->GetTrack()->GetTotalEnergy());
