@@ -86,6 +86,12 @@ LcPrimaryGeneratorAction::LcPrimaryGeneratorAction(int crType, int posFrac)
   gammaDistX =  -7.5;// mm
 #endif /*COLL_GAMMA*/
 #if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
+  gammaDistX = 0.0;//mm
+  gammaDistY = 70.0;//mm
+  pos = 0.0;//mm
+  xCoor = 0.0;
+  yCoor = -1.0;
+  zCoor = 0.0;
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, 60.0*mm, pos*mm)); 
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, -60.0*mm, pos*mm)); 
   particleGun->SetParticlePosition(G4ThreeVector(gammaDistX*mm, gammaDistY*mm, pos*mm)); 
@@ -95,15 +101,16 @@ LcPrimaryGeneratorAction::LcPrimaryGeneratorAction(int crType, int posFrac)
   particleGun->SetParticleMomentumDirection(G4ThreeVector(xCoor, yCoor, zCoor));
   printf(">>>>>> ParticleGun origin: %3.2f, %3.2f, %3.2f; ParticleGun direction: %3.2f, %3.2f, %3.2f\n",
           gammaDistX, gammaDistY, pos, xCoor, yCoor, zCoor);
+
 #else
 
   particleGun->SetParticlePosition(G4ThreeVector(0, 17.045*mm, (170.0 + 20.0*(double)crType)*mm));
   particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0,0.0,-1.0));
-#ifdef NEW_GEOMETRY
-    particleGun->SetParticlePosition(G4ThreeVector(0, 70.0*mm, 0));
-  particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0,-2.0,0.0));
-  particleGun->SetParticleEnergy(0.662*MeV);
-#endif /*NEW_GEOMETRY*/
+//#ifdef NEW_GEOMETRY
+    //particleGun->SetParticlePosition(G4ThreeVector(0, 70.0*mm, 0));
+  //particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0,-2.0,0.0));
+  //particleGun->SetParticleEnergy(0.662*MeV);
+//#endif /*NEW_GEOMETRY*/
 #endif /*NOREFLECTOR*/
 }
 
@@ -118,7 +125,8 @@ LcPrimaryGeneratorAction::~LcPrimaryGeneratorAction()
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 void LcPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
+#ifndef NEW_GEOMETRY
+#ifdef NOREFLECTOR
  #ifndef SIMPLE_OPTICS
   G4double redLimit = 800.0;// nm
   G4double blueLimit = 300.0;// nm
@@ -135,6 +143,7 @@ void LcPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   particleGun->SetParticleEnergy(
           1239.8/rnd);// optical photon with 550 nm wavelength
 #endif /*NOREFLECTOR*/
+#endif// NEW_GEOMETRY
 #ifdef NEW_GEOMETRY
     particleGun->SetParticleEnergy(0.662*MeV);
 #endif /*NEW_GEOMETRY*/
@@ -155,6 +164,9 @@ void LcPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   xCoor = sin(theta)*sin(phi);
   zCoor = sin(theta)*cos(phi);
   yCoor = cos(theta);
+  xCoor = 0.0;
+  yCoor = -1.0;
+  zCoor = 0.0;
   particleGun->SetParticleMomentumDirection(G4ThreeVector(xCoor, yCoor, zCoor));
   //printf(">>>>>> omega = %4.3f\n", omega);
 #endif /*COLL_GAMMA*/

@@ -400,9 +400,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
 
     //flag for new geometry; 0 - don't use
-    int flag = 1;
-
-    if (flag) {
+#ifdef NEW_GEOMETRY
 
     //Standart Tube
     G4double standInRadSize = 0.0*mm;
@@ -427,23 +425,39 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     G4Tubs* solidGlue = new G4Tubs("solidGlue", standInRadSize, standOutRadSize, standGlueSizeZ/2.0, 0.0, 2.0 * M_PI);
 
+
+
+    //Solid for new detector, its main part of body is cube
+    G4double cubSizeX = 5*mm;
+    G4double cubSizeY = cubSizeX;
+    G4double cubSizeZ = 20*mm;
+
+    G4RotationMatrix* rotMatr = new G4RotationMatrix();
+    rotMart->rotateX(M_PI/6.0);
+
+    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0));
+
+    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), rotMatr);
+
+    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 2.0*rotMatr);
+
+    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 3.0*rotMatr);
+
+    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 4.0*rotMatr);
+
+    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 5.0*rotMatr);
+
+
+
+
+
+
+
+
     //Using materials
     G4Material* Stilbene = man->FindOrBuildMaterial("G4_STILBENE");
     G4Material* Al = man->FindOrBuildMaterial("G4_Al");
-    G4Material* Gl = man->FindOrBuildMaterial("G4_GLASS_PLATE");
-
-
-
-
-
-
-
-
-
-    CsITable->AddConstProperty("FASTTIMECONSTANT", 0.68*us);
-    CsITable->AddConstProperty("SLOWTIMECONSTANT", 3.34*us);
-    CsI->SetMaterialPropertiesTable(CsITable);
-
+    //G4Material* Gl = man->FindOrBuildMaterial("G4_GLASS_PLATE");
 
     //Optical properties of Stilbene
     const G4int numStilb = 1;
@@ -459,18 +473,12 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     StilbTable->AddProperty("FASTCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
     StilbTable->AddProperty("SLOWCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
     //StilbTable->AddConstProperty("SCINTILLATIONYIELD", 6720.0/(1.0*MeV));
-    StilbTable->AddConstProperty("SCINTILLATIONYIELD", 2.0e1/(0.662*MeV));
-    CsITable->AddConstProperty("RESOLUTIONSCALE", 0.01);
-    CsITable->AddConstProperty("YIELDRATIO", 1.00);
+    StilbTable->AddConstProperty("SCINTILLATIONYIELD", 4.449e3/(0.662*MeV));
+    StilbTable->AddConstProperty("RESOLUTIONSCALE", 0.01);
+    StilbTable->AddConstProperty("YIELDRATIO", 1.00);
     StilbTable->AddConstProperty("FASTTIMECONSTANT", 0.36*ns); //from Leo
     StilbTable->AddConstProperty("SLOWTIMECONSTANT", 4.5*ns);
     Stilbene->SetMaterialPropertiesTable(StilbTable);
-
-
-
-
-
-
 
     //Logical Volume for Standart tube
 
@@ -542,28 +550,31 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
 
     //Creating properties of optical surface dielectric - dielectric
-     //const G4int numb = 1;
-    //G4double OptPhoton[numb] = {1.7*eV};
+     const G4int numb = 1;
+    G4double OptPhoton1[numb] = {1.7*eV};
     //G4double sigma_alpha=0.1;
-    //G4double sigma_alpha_polished = 0.077;
-    //G4double sigma_alpha_unpolished = 0.162;
-    G4double OptRefractivityDD[number] = {1.5};
+    G4double sigma_alpha_polished1 = 0.077;
+    G4double sigma_alpha_unpolished1 = 0.162;
+    G4double OptRefractivityDD[numb] = {1.5};
     //G4double SpecularLobe[num]    = {1};//refl. about facet normal //1
     //G4double SpecularSpike[num]   = {0};//refl. about avg suface normal //0
-    //G4double OptSpecularLobe[number]    = {0.01};//refl. about facet normal //1
-    //G4double OptSpecularSpike[number]   = {1 - OptSpecularLobe[number]};//refl. about avg suface normal //0
-    //G4double OptBackscatter[number]     = {0};//refl. in groove, //diffuse lobe constant
-    //G4double Reflectivity[num] = {0.98};
-    //G4double Efficiency[num]   = {0.02};
-    G4double OptReflectivityDD[number] = {0.0};
-    G4double OptEfficiencyDD[number]   = {1 - OptReflectivityDD[number]};
+    G4double OptSpecularLobeDD[numb]    = {0.5};//refl. about facet normal //1
+    G4double OptSpecularSpikeDD[numb]   = {0.5};//refl. about avg suface normal //0
+    G4double OptBackscatterDD[numb]     = {0};//refl. in groove, //diffuse lobe constant
+    G4double ReflectivityDD[numb] = {0.98};
+    G4double EfficiencyDD[numb]   = {0.02};
+    //G4double OptReflectivityDD[number] = {0.0};
+    //G4double OptEfficiencyDD[number]   = {1 - OptReflectivityDD[number]};
     //G4double Reflectivity[num] = {1.0};
     //G4double Efficiency[num]   = {0.0};
 
     G4MaterialPropertiesTable* PmtOpticsTableDD = new G4MaterialPropertiesTable();
-    PmtOpticsTableDD->AddProperty("RINDEX", OptPhoton, OptRefractivityDD, number);
-    PmtOpticsTableDD->AddProperty("REFLECTIVITY", OptPhoton, OptReflectivityDD, number);
-    PmtOpticsTableDD->AddProperty("EFFICIENCY",   OptPhoton, OptEfficiencyDD,   number);
+    PmtOpticsTableDD->AddProperty("RINDEX", OptPhoton, OptRefractivityDD, numb);
+    PmtOpticsTableDD->AddProperty("SPECULARLOBECONSTANT", OptPhoton1, OptSpecularLobeDD, numb);
+    PmtOpticsTableDD->AddProperty("SPECULARSPIKECONSTANT", OptPhoton1, OptSpecularSpikeDD, numb);
+    PmtOpticsTableDD->AddProperty("BACKSCATTERCONSTANT", OptPhoton1, OptBackscatterDD, numb);
+    PmtOpticsTableDD->AddProperty("REFLECTIVITY", OptPhoton1, ReflectivityDD, numb);
+    PmtOpticsTableDD->AddProperty("EFFICIENCY",   OptPhoton1, EfficiencyDD,   numb);
 
     G4OpticalSurface* OpticsPmtSurfaceDD = new G4OpticalSurface("OpticsPmtSurfaceDD");
     OpticsPmtSurfaceDD->SetType(dielectric_dielectric);
@@ -583,7 +594,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     G4Tubs* solidPmt = new G4Tubs("solidPmt", standInRadSize, standOutRadSize, pmtSizeZ/2.0, 0.0, 2.0 * M_PI);
 
     //Logical volume for glass window
-    G4LogicalVolume* logicWinPmt = new G4LogicalVolume(solidWinPmt, Gl, "logicWinPmt");
+    G4LogicalVolume* logicWinPmt = new G4LogicalVolume(solidWinPmt, Glass, "logicWinPmt");
 
     //Logical volume for pmt
     G4LogicalVolume* logicPmt = new G4LogicalVolume(solidPmt, Air, "logicWinPmt");
@@ -617,12 +628,18 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     G4LogicalBorderSurface* PmtGlass = new G4LogicalBorderSurface("PmtGlass", PhysPmt, PhysWinPmt, OpticsPmtSurfaceDD);
 
-    G4SDManager* SDman1 = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+    //Sensitive detector for pmt and stilbene
+    G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
         if(!pmt_SD){//check if pmt_SD does not exists otherwise create it
             pmt_SD = new LcPMTSD("PMT1");
-            SDman1->AddNewDetector(pmt_SD); //now we've created the SD so it exists(no doubt)
+            SDman->AddNewDetector(pmt_SD); //now we've created the SD so it exists(no doubt)
         }
         logicPmt->SetSensitiveDetector(pmt_SD);
+        if(!CsI_SD){//check if CsI_SD does not exists otherwise create it
+                CsI_SD = new LcCsISD("CsI1");
+                SDman->AddNewDetector(CsI_SD);//now we've created the SD so it exists(no doubt)
+                logicStandTub->SetSensitiveDetector(CsI_SD);
+         }
 
 
     //Checking geometry
@@ -639,7 +656,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     //G4cout << centre;
 
-    }
+#endif /*NEW_GEOMETRY*/
 
 
     //--------------------------------------------------------------------------
@@ -2035,13 +2052,13 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
 #ifndef NEW_GEOMETRY
     G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
-#endif /*NEW_GEOMETRY*/
+
     if(!CsI_SD){//check if CsI_SD does not exists otherwise create it
           CsI_SD = new LcCsISD("CsI1");
           SDman->AddNewDetector(CsI_SD);//now we've created the SD so it exists(no doubt)
           logCsI1->SetSensitiveDetector(CsI_SD);
     }
-
+#endif /*NEW_GEOMETRY*/
     logWorld->SetVisAttributes(BWire);
 
     //--------------------------------------------------------------------------
