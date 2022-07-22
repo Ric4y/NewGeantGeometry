@@ -402,6 +402,11 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     //flag for new geometry; 0 - don't use
 #ifdef NEW_GEOMETRY
 
+  //Using materials
+    G4Material* Stilbene = man->FindOrBuildMaterial("G4_STILBENE");
+    G4Material* Al = man->FindOrBuildMaterial("G4_Al");
+    //G4Material* Gl = man->FindOrBuildMaterial("G4_GLASS_PLATE");
+
     //Standart Tube
     G4double standInRadSize = 0.0*mm;
     G4double standOutRadSize = 43.5*mm;
@@ -427,37 +432,51 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
 
 
-    //Solid for new detector, its main part of body is cube
-    G4double cubSizeX = 5*mm;
-    G4double cubSizeY = cubSizeX;
-    G4double cubSizeZ = 20*mm;
+    //Solid for new detector, its main part of body is trapezoid
+    G4double size = 52*mm;
+    G4double trdSizeX = 75*mm;
+    G4double trdSizeY1 = 2.0 * size;
+    G4double trdSizeY2 = size;
+    G4double trdSizeZ = size * sqrt(3.0)/2.0;
 
     G4RotationMatrix* rotMatr = new G4RotationMatrix();
-    rotMart->rotateX(M_PI/6.0);
+    rotMatr->rotateX(M_PI);
 
-    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0));
+    G4Trd* solidTrd1 = new G4Trd("solidTrd1", trdSizeX / 2.0, trdSizeX / 2.0, trdSizeY2 / 2.0, trdSizeY1 / 2.0, trdSizeZ / 2.0);
 
-    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), rotMatr);
+    G4Tubs* solidCutout = new G4Tubs("solidCutout", InRadSizeSide, OutRadSizeSide, 1.0*mm, 0.0, 2.0 * M_PI);
 
-    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 2.0*rotMatr);
-
-    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 3.0*rotMatr);
-
-    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 4.0*rotMatr);
-
-    G4Box* solidCube1 = new G4Box("solidCube1", cubSizeX, cubSizeY, cubSizeZ,G4ThreeVector(OutRadSizeSide, 0.0, 0.0), 5.0*rotMatr);
+    G4VSolid* solidHex1 = new G4UnionSolid("solidHex1", solidTrd1, solidTrd1, rotMatr, G4ThreeVector(0.0, 0.0, trdSizeZ - 10.0*um));
 
 
 
+    G4LogicalVolume* logicHex = new G4LogicalVolume(solidHex, Air, "logicHex");
+
+    G4RotationMatrix* rotMatr1 = new G4RotationMatrix();
+    rotMatr1->rotateY(M_PI/2.0);
+
+    G4VPhysicalVolume* physHex = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*trdSizeX/2.0, 0.0, 0.0), logicHex, "physHex", logWorld, false, 0, 0);
+
+    //creating shell for hexagon
+    G4double layerNew = 50.0*um;
+    G4double sizeNew = 52.0*mm + 2.0*layerNew;
+    G4double layerSizeX = 75.0*mm + 2.0*layerNew;
+    G4double layerSizeY1 = 2.0 * sizeNew;
+    G4double layerSizeY2 = sizeNew;
+    G4double layerSizeZ = sizeNew * sqrt(3.0)/2.0;
+
+    G4Trd* solidLayerAndHex = new G4Trd("solidLayerAndHex", layerSizeX / 2.0, layerSizeX / 2.0, layerSizeY2 / 2.0, layerSizeY1 / 2.0, layerSizeZ / 2.0);
+
+    G4VSolid* solidLayerAndHex1 = new G4UnionSolid("solidLayerAndHex1", solidLayerAndHex, solidLayerAndHex, rotMatr, G4ThreeVector(0.0, 0.0, layerSizeZ - 10.0*um));
+
+    G4VSolid* solidLayer = new G4SubtractionSolid("solidLayer", solidLayerAndHex1, solidHex);
+
+    G4LogicalVolume* logicLayer = new G4LogicalVolume(solidLayer, Al, "logicLayer");
+
+    G4VPhysicalVolume* physLayer = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0, 0.0, 0.0), logicLayer, "physLayer", logWorld, false, 0, 0);
 
 
 
-
-
-    //Using materials
-    G4Material* Stilbene = man->FindOrBuildMaterial("G4_STILBENE");
-    G4Material* Al = man->FindOrBuildMaterial("G4_Al");
-    //G4Material* Gl = man->FindOrBuildMaterial("G4_GLASS_PLATE");
 
     //Optical properties of Stilbene
     const G4int numStilb = 1;
@@ -519,8 +538,8 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     const G4int number = 1;
     G4double OptPhoton[number] = {1.9*eV};
     //G4double sigma_alpha=0.1;
-    G4double sigma_alpha_polished = 0.077;
-    G4double sigma_alpha_unpolished = 0.162;
+    G4double sigma_alpha_polishedDM = 0.077;
+    G4double sigma_alpha_unpolishedDM = 0.162;
     //G4double OptRefractivityDM[number] = {1.0};
     //G4double SpecularLobe[num]    = {1};//refl. about facet normal //1
     //G4double SpecularSpike[num]   = {0};//refl. about avg suface normal //0
@@ -553,8 +572,8 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
      const G4int numb = 1;
     G4double OptPhoton1[numb] = {1.7*eV};
     //G4double sigma_alpha=0.1;
-    G4double sigma_alpha_polished1 = 0.077;
-    G4double sigma_alpha_unpolished1 = 0.162;
+    G4double sigma_alpha_polishedDD = 0.077;
+    G4double sigma_alpha_unpolishedDD = 0.162;
     G4double OptRefractivityDD[numb] = {1.5};
     //G4double SpecularLobe[num]    = {1};//refl. about facet normal //1
     //G4double SpecularSpike[num]   = {0};//refl. about avg suface normal //0
