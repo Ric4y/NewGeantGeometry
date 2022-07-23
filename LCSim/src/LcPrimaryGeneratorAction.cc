@@ -86,15 +86,16 @@ LcPrimaryGeneratorAction::LcPrimaryGeneratorAction(int crType, int posFrac)
   gammaDistX =  -7.5;// mm
 #endif /*COLL_GAMMA*/
 #if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
-  gammaDistX = 0.0;//mm
-  gammaDistY = 70.0;//mm
+  //gammaDistX =  0.08*mm;//mm
+  gammaDistX =  5*cm + sqrt(3.0)*(52*mm + 400*um);//mm
+  gammaDistY = 70.0*mm;//mm
   pos = 0.0;//mm
   xCoor = 0.0;
   yCoor = -1.0;
   zCoor = 0.0;
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, 60.0*mm, pos*mm)); 
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, -60.0*mm, pos*mm)); 
-  particleGun->SetParticlePosition(G4ThreeVector(gammaDistX*mm, gammaDistY*mm, pos*mm)); 
+  particleGun->SetParticlePosition(G4ThreeVector(gammaDistX, gammaDistY, pos*mm));
   particleGun->SetParticleEnergy(0.662*MeV);//0.6620*MeV from the 137Cs source
   //particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0,-1.0,0.0));
   //particleGun->SetParticleMomentumDirection(G4ThreeVector(0.0, 1.0, 0.0));
