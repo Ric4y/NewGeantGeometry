@@ -38,6 +38,7 @@
 #include "G4SystemOfUnits.hh"
 #include "G4PhysicalConstants.hh"
 #include "G4MultiUnion.hh"
+#include "G4Polyhedra.hh"
 
 #include "G4Para.hh"
 
@@ -400,13 +401,16 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
 
 
-    //flag for new geometry; 0 - don't use
+   
 #ifdef NEW_GEOMETRY
-
-  //Using materials
+//////********************Using materials*********************/////////
     G4Material* Stilbene = man->FindOrBuildMaterial("G4_STILBENE");
     G4Material* Al = man->FindOrBuildMaterial("G4_Al");
     //G4Material* Gl = man->FindOrBuildMaterial("G4_GLASS_PLATE");
+        //------------BC400
+    G4Material* PlastBC400 = new G4Material("PlastBC400", density = 1.023*g/cm3, nel = 2);
+    PlastBC400->AddElement(elH, 5);
+    PlastBC400->AddElement(elC,  5);
 
     //Standart Tube
     G4double standInRadSize = 0.0*mm;
@@ -431,13 +435,6 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     G4Tubs* solidGlue = new G4Tubs("solidGlue", standInRadSize, standOutRadSize, standGlueSizeZ/2.0, 0.0, 2.0 * M_PI);
 
-
-
-    //------------BC400
-    G4Material* PlastBC400 = new G4Material("PlastBC400", density = 1.023*g/cm3, nel = 2);
-    PlastBC400->AddElement(elH, 5);
-    PlastBC400->AddElement(elC,  5);
-
     //Optical properties of BC400
     const G4int numPlast = 1;
     G4double photEnergyPlast[numPlast] = {2.115*eV}; //from Saint Gobain for BC400
@@ -458,82 +455,6 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     PlastTable->AddConstProperty("FASTTIMECONSTANT", 0.39*ns); //from Saint Gobain for BC400
     PlastTable->AddConstProperty("SLOWTIMECONSTANT", 2.4*ns);//from Saint Gobain for BC400
     PlastBC400->SetMaterialPropertiesTable(PlastTable);
-
-
-
-
-
-    //Solid for new detector, its main part of body is trapezoid
-    G4double size = 52*mm;
-    G4double trdSizeX = 75*mm;
-    G4double trdSizeY1 = 2.0 * size;
-    G4double trdSizeY2 = size;
-    G4double trdSizeZ = size * sqrt(3.0)/2.0;
-
-
-    G4double step = 5.0*cm;
-
-    G4RotationMatrix* rotMatr = new G4RotationMatrix();
-    rotMatr->rotateX(0.0);
-
-    G4RotationMatrix rotMatr11 = G4RotationMatrix();
-    rotMatr11.rotateX(0.0);
-    G4ThreeVector position1 = G4ThreeVector(0.0, 0.0, 0.0);
-
-    G4RotationMatrix rotMatr2 = G4RotationMatrix();
-    //rotMatr->rotateX(M_PI);
-    G4ThreeVector position2 = G4ThreeVector(0.0, 0.0, trdSizeZ - 10.0*um);
-    G4Transform3D tr1 = G4Transform3D(rotMatr11, position1);
-    G4Transform3D tr2 = G4Transform3D(rotMatr2, position2);
-
-    G4Trd* solidTrd1 = new G4Trd("solidTrd1", trdSizeX / 2.0, trdSizeX / 2.0, trdSizeY2 / 2.0, trdSizeY1 / 2.0, trdSizeZ / 2.0);
-
-    G4MultiUnion* solidHex= new G4MultiUnion("solidHex");
-
-    solidHex->AddNode(*solidTrd1, tr1);
-    solidHex->AddNode(*solidTrd1, tr2);
-    solidHex->Voxelize();
-
-    //G4VSolid* solidHex = new G4UnionSolid("solidHex1", solidTrd1, solidTrd1, rotMatr, G4ThreeVector(0.0, 0.0, trdSizeZ - 10.0*um));
-
-    //creating hole inside the hexagon
-    //G4Tubs* solidCutout = new G4Tubs("solidCutout", InRadSizeSide, OutRadSizeSide + 200*um, 2.0*mm, 0.0, 2.0 * M_PI);
-
-    G4RotationMatrix* rotMatrY = new G4RotationMatrix();
-    rotMatrY->rotateY(M_PI/2.0);
-
-    //G4VSolid* solidHex = new G4SubtractionSolid("solidHex", solidHex1, solidCutout, rotMatrY, G4ThreeVector(trdSizeX/2.0, 0.0, OutRadSizeSide/2.0));
-
-    G4LogicalVolume* logicHex = new G4LogicalVolume(solidHex, PlastBC400, "logicHex");
-
-    G4RotationMatrix* rotMatr1 = new G4RotationMatrix();
-    rotMatr1->rotateY(M_PI/2.0);
-
-    G4VPhysicalVolume* physHex = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*trdSizeX/2.0 + step, 0.0, 0.0), logicHex, "physHex", logWorld, false, 0, 0);
-
-    //creating shell for hexagon
-    G4double layerNew = 200.0*um;
-    G4double forcut = 120*um;
-    G4double sizeNew = size + 2.0*layerNew;
-    G4double layerSizeX = trdSizeX + 2.0*layerNew;
-    G4double layerSizeY1 = 2.0 * sizeNew;
-    G4double layerSizeY2 = sizeNew;
-    G4double layerSizeZ = sizeNew * sqrt(3.0)/2.0;
-
-    G4Trd* solidLayerAndHex = new G4Trd("solidLayerAndHex", layerSizeX / 2.0, layerSizeX / 2.0, layerSizeY2 / 2.0, layerSizeY1 / 2.0, layerSizeZ / 2.0);
-
-    G4VSolid* solidLayerAndHex1 = new G4UnionSolid("solidLayerAndHex1", solidLayerAndHex, solidLayerAndHex, rotMatr, G4ThreeVector(0.0, 0.0, layerSizeZ - 10.0*um));
-
-    G4VSolid* solidLayer1 = new G4SubtractionSolid("solidLayer", solidLayerAndHex1, solidHex);
-
-    //creating hole inside the hexagon's shell'
-    G4Tubs* solidCutout1 = new G4Tubs("solidCutout1", InRadSizeSide, OutRadSizeSide + 200*um, forcut/2.0, 0.0, 2.0 * M_PI);
-
-    G4VSolid* solidLayer = new G4SubtractionSolid("solidLayer", solidLayer1, solidCutout1, rotMatrY, G4ThreeVector(layerSizeX/2.0, 0.0, OutRadSizeSide/2.0));
-
-    G4LogicalVolume* logicLayer = new G4LogicalVolume(solidLayer, Al, "logicLayer");
-
-    G4VPhysicalVolume* physLayer = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, 0.0), logicLayer, "physLayer", logWorld, false, 0, 0);
 
     //Optical properties of Stilbene
     const G4int numStilb = 1;
@@ -556,6 +477,8 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     StilbTable->AddConstProperty("SLOWTIMECONSTANT", 4.5*ns);
     Stilbene->SetMaterialPropertiesTable(StilbTable);
 
+//////***************first detector with stilbene********************////////
+    
     //Logical Volume for Standart tube
 
     G4LogicalVolume* logicStandTub = new G4LogicalVolume(solidStandTub, Stilbene, "logicStandTub");
@@ -572,7 +495,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     G4LogicalVolume* logicBottom = new G4LogicalVolume(solidBottom, Al, "logicBottom");
 
-    //Physical Volume for case
+    //Physical Volume for Standart tube
 
     G4VPhysicalVolume* physStandTub = new G4PVPlacement(0, G4ThreeVector(0, 0, 0), logicStandTub, "physTube", logWorld, false, 0, 0);
 
@@ -702,24 +625,11 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     //Physical volume for pmt
     G4VPhysicalVolume* PhysPmt = new G4PVPlacement(0, G4ThreeVector(0, 0, (standTubSizeZ + pmtSizeZ) / 2.0 + standGlueSizeZ + glassSizeZ), logicPmt, "PhysPmt", logWorld, false, 0, 0);
 
-    //logicPmt->SetVisAttributes(RSolid);
+    logicPmt->SetVisAttributes(RSolid);
 
-    //logicWinPmt->SetVisAttributes(GSolid);
+    logicWinPmt->SetVisAttributes(GSolid);
 
-    //logicGlue->SetVisAttributes(BSolid);
-
-    //Physical volume for glue between pmt and its window for new detector
-    G4VPhysicalVolume* PhysGluePmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, trdSizeX/2.0 - forcut), logicGlue, "PhysGluePmtNew", logWorld, false, 0, 0);
-
-    //Physical volume for glass window for new detector
-    G4VPhysicalVolume* PhysWinPmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, trdSizeX/2.0 - forcut + glassSizeZ/2.0 + standGlueSizeZ), logicWinPmt, "PhysWinPmtNew", logWorld, false, 0, 0);
-
-    //Physical volume for pmt
-    G4VPhysicalVolume* PhysPmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, trdSizeX/2.0 - forcut + glassSizeZ + standGlueSizeZ + pmtSizeZ/2.0), logicPmt, "PhysPmtNew", logWorld, false, 0, 0);
-
-    //Logical surface
-    G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmt,OpticsPmtSurfaceDD);
-
+    logicGlue->SetVisAttributes(BSolid);
     //Optical properties between physical volumes
 
     G4LogicalBorderSurface* ShellScin = new G4LogicalBorderSurface("ShellScin", physShell, physStandTub, OpticsPmtSurfaceDM);
@@ -731,17 +641,124 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     G4LogicalBorderSurface* GlueGlass = new G4LogicalBorderSurface("GlueGlass", PhysGluePmt, PhysWinPmt, OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* PmtGlass = new G4LogicalBorderSurface("PmtGlass", PhysWinPmt, PhysPmt, OpPmtSurfaceNew);
+    
+    
+////**********NEW DETECTOR*********////////
 
-    //G4LogicalBorderSurface* HexLayer = new G4LogicalBorderSurface("HexLayer", physLayer, physHex, OpticsPmtSurfaceDM);
 
-    //G4LogicalBorderSurface* BottomScin = new G4LogicalBorderSurface("BottomScin", physBottom, physStandTub, OpticsPmtSurfaceDM);
 
-    //G4LogicalBorderSurface* GlueScinNew = new G4LogicalBorderSurface("GlueScinNew", PhysGluePmtNew, physHex, OpticsPmtSurfaceDD);
+//Solid for new detector, its main part of body is trapezoid
+    G4double size = 52.0*mm;
+    G4double trdSizeX = 75.0*mm;
+    G4double trdSizeY1 = 2.0 * size;
+    G4double trdSizeY2 = size;
+    G4double trdSizeZ = size * sqrt(3.0)/2.0;
 
+
+    G4double step = 5.0*cm;
+
+    G4RotationMatrix* rotMatr = new G4RotationMatrix();
+    rotMatr->rotateX(0.0);
+
+    G4RotationMatrix rotMatr11 = G4RotationMatrix();
+    rotMatr11.rotateX(0.0);
+    G4ThreeVector position1 = G4ThreeVector(0.0, 0.0, 0.0);
+
+    G4RotationMatrix rotMatr2 = G4RotationMatrix();
+    rotMatr2.rotateX(0.0);
+    G4ThreeVector position2 = G4ThreeVector(2.0*um, 2.0*um, trdSizeZ - 2.0*um);
+    G4Transform3D tr1 = G4Transform3D(rotMatr11, position1);
+    G4Transform3D tr2 = G4Transform3D(rotMatr2, position2);
+
+    G4Trd* solidTrd1 = new G4Trd("solidTrd1", trdSizeX / 2.0, trdSizeX / 2.0, trdSizeY2 / 2.0, trdSizeY1 / 2.0, trdSizeZ / 2.0);
+    
+    G4Trd* solidTrd2 = new G4Trd("solidTrd2", trdSizeX / 2.0, trdSizeX / 2.0, trdSizeY1 / 2.0, trdSizeY2 / 2.0, trdSizeZ / 2.0);
+
+    G4MultiUnion* solidHex= new G4MultiUnion("solidHex");
+
+    solidHex->AddNode(*solidTrd1, tr1);
+    solidHex->AddNode(*solidTrd2, tr2);
+    solidHex->Voxelize();
+
+    //G4VSolid* solidHex = new G4UnionSolid("solidHex1", solidTrd1, solidTrd1, rotMatr, G4ThreeVector(0.0, 0.0, trdSizeZ - 10.0*um));
+
+    G4RotationMatrix* rotMatrY = new G4RotationMatrix();
+    rotMatrY->rotateY(M_PI/2.0);
+
+    //G4VSolid* solidHex = new G4SubtractionSolid("solidHex", solidHex1, solidCutout, rotMatrY, G4ThreeVector(trdSizeX/2.0, 0.0, OutRadSizeSide/2.0));
+
+    G4LogicalVolume* logicHex = new G4LogicalVolume(solidHex, PlastBC400, "logicHex");
+
+    G4RotationMatrix* rotMatr1 = new G4RotationMatrix();
+    rotMatr1->rotateY(M_PI/2.0);
+
+    //creating shell for hexagon
+    G4double layerNew = 200.0*um;
+    G4double forcut = layerNew;
+    G4double sizeNew = size + 2.0*layerNew/sqrt(3.0);
+    G4double layerSizeX = trdSizeX + 2.0*layerNew;
+    G4double layerSizeY1 = 2.0 * sizeNew;
+    G4double layerSizeY2 = sizeNew;
+    G4double layerSizeZ = sizeNew * sqrt(3.0)/2.0;
+    
+    G4ThreeVector position22 = G4ThreeVector(2.0*um, 2.0*um, layerSizeZ - 2.0*um);
+    G4Transform3D tr22 = G4Transform3D(rotMatr2, position2);
+    
+    G4Trd* solidLayerAndHex1 = new G4Trd("solidLayerAndHex1", layerSizeX / 2.0, layerSizeX / 2.0, layerSizeY2 / 2.0, layerSizeY1 / 2.0, layerSizeZ / 2.0);
+    
+    G4Trd* solidLayerAndHex2 = new G4Trd("solidLayerAndHex2", layerSizeX / 2.0, layerSizeX / 2.0, layerSizeY1 / 2.0, layerSizeY2 / 2.0, layerSizeZ / 2.0);
+    
+    G4MultiUnion* solidLayerAndHex= new G4MultiUnion("solidLayerAndHex");
+
+    solidLayerAndHex->AddNode(*solidLayerAndHex1, tr1);
+    solidLayerAndHex->AddNode(*solidLayerAndHex2, tr22);
+    solidLayerAndHex->Voxelize();
+
+    G4VSolid* solidLayer1 = new G4SubtractionSolid("solidLayer1", solidLayerAndHex, solidHex, rotMatr, G4ThreeVector(0.0, 0.0, 0.0));
+
+    //creating hole inside the hexagon's shell'
+    G4Tubs* solidCutout1 = new G4Tubs("solidCutout1", InRadSizeSide, OutRadSizeSide + 200*um, forcut/2.0, 0.0, 2.0 * M_PI);
+
+    G4VSolid* solidLayer = new G4SubtractionSolid("solidLayer", solidLayer1, solidCutout1, rotMatrY, G4ThreeVector(layerSizeX/2.0 - forcut/2.0, 0.0, OutRadSizeSide/2.0));
+
+    G4LogicalVolume* logicLayer = new G4LogicalVolume(solidLayer, Al, "logicLayer");
+
+    G4VPhysicalVolume* physLayer = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, 0.0), logicLayer, "physLayer", logWorld, false, 0, 0);
+    
+    //logicLayer->SetVisAttributes(GSolid);
+    
+    G4VPhysicalVolume* physHex = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, 0.0), logicHex, "physHex", logWorld, false, 0, 0);
+    
+    //logicHex->SetVisAttributes(YSolid);
+    
+
+    //Physical volume for glue between pmt and its window for new detector
+   G4VPhysicalVolume* PhysGluePmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, layerSizeX/2.0 - forcut + standGlueSizeZ/2.0), logicGlue, "PhysGluePmtNew", logWorld, false, 0, 0);
+
+    ///Physical volume for glass window for new detector
+    G4VPhysicalVolume* PhysWinPmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, layerSizeX/2.0 - forcut + glassSizeZ/2.0 + standGlueSizeZ), logicWinPmt, "PhysWinPmtNew", logWorld, false, 0, 0);
+
+    //Physical volume for pmt
+    G4VPhysicalVolume* PhysPmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, layerSizeX/2.0 - forcut + glassSizeZ + standGlueSizeZ + pmtSizeZ/2.0), logicPmt, "PhysPmtNew", logWorld, false, 0, 0);
+
+    //Logical surface
+    G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmt, OpticsPmtSurfaceDD);
+
+    //Optical properties between physical volumes for new detector
+   G4LogicalBorderSurface* HexLayer = new G4LogicalBorderSurface("HexLayer", physLayer, physHex, OpticsPmtSurfaceDM);
+
+    G4LogicalBorderSurface* GlueScinNew = new G4LogicalBorderSurface("GlueScinNew", PhysGluePmtNew, physHex, OpticsPmtSurfaceDD);
+
+    G4LogicalBorderSurface* PmtWinshell = new G4LogicalBorderSurface("GlueScinNew", PhysWinPmtNew, physLayer, OpticsPmtSurfaceDD);
+    
+    G4LogicalBorderSurface* GlueShell = new G4LogicalBorderSurface("GlueShell", PhysGluePmtNew, physLayer, OpticsPmtSurfaceDM);
+    
+    //G4LogicalBorderSurface* PmtShell = new G4LogicalBorderSurface("PmtShell", PhysPmtNew, physLayer, OpticsPmtSurfaceDM);
+    
     G4LogicalBorderSurface* GlueGlassNew = new G4LogicalBorderSurface("GlueGlassNew", PhysGluePmtNew, PhysWinPmtNew, OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* PmtGlassNew = new G4LogicalBorderSurface("PmtGlassNew", PhysWinPmtNew,  PhysPmtNew, OpPmtSurfaceNew);
-
+    
     //Sensitive detector for pmt and stilbene
     G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
         if(!pmt_SD){//check if pmt_SD does not exists otherwise create it
