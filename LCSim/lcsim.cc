@@ -205,7 +205,7 @@ G4int main(G4int argc, char* argv[])
         timeUTCnsec += timeStamp.tv_nsec;
 
         myseed += timeUTCnsec;
-        //myseed = 1;
+        myseed = 1;
         CLHEP::HepRandom::setTheSeed(myseed);
 
         // User Verbose output class

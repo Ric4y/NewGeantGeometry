@@ -24,80 +24,47 @@
 // ********************************************************************
 //
 //
-// $Id: LcDetectorConstruction.hh,v 1.5 2006/06/29 17:53:55 gunter Exp $
+// $Id: LcPMTSD.hh,v 1.7 2006/06/29 17:47:56 gunter Exp $
 // GEANT4 tag $Name: geant4-09-03-patch-01 $
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-#ifndef LcDetectorConstruction_h
-#define LcDetectorConstruction_h 1
+#ifndef LcPMTComptonSD_h
+#define LcPMTComptonSD_h 1
 
-#include <vector>
+#include "G4VSensitiveDetector.hh"
+#include "LcPMTHit.hh"
 
-#include "globals.hh"
-#include "G4VUserDetectorConstruction.hh"
-
-#include "LcVars.hh"
-
-using std::vector;
+class G4Step;
+class G4HCofThisEvent;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-class G4LogicalVolume;
-class G4VPhysicalVolume;
-class G4Material;
-class LcPMTSD;
-class LcPMTComptonSD;
-class LcAPDSD;
-class LcCsISD;
-#ifdef PHOTON_COUNTER
-class LcPhotonCounterSD;
-#endif /*PHOTON_COUNTER*/
-class LcDetectorConstruction : public G4VUserDetectorConstruction
+
+class LcPMTComptonSD : public G4VSensitiveDetector
 {
-  public:
-  //LcDetectorConstruction(int a, int b, int c, int d, int e, int f, 
-  //        int inFracTop, int inFracRight, int inFracBottom, int inFracLeft);
-  LcDetectorConstruction(G4int a, G4int b, G4int c, G4int d, G4double e, G4int f, 
-          G4int inFracTop, G4int inFracRight, G4int inFracBottom, G4int inFracLeft,
-          G4bool modelSwitch, 
-          G4double rindexOpticalGlue, G4double rindexEpoxyAPD,
-          vector<double>* vEnergy, vector<double>* vLambda); 
-  // modelSwitch = 0 -> UNUFIED, modelSwitch = 1 -> LUT
-   ~LcDetectorConstruction();
+    public:
+        LcPMTComptonSD(G4String);
+        ~LcPMTComptonSD();
 
-  public:
- //   void  AddMaterial();
-    G4VPhysicalVolume* Construct();
-  private:
-  //int crType, tapered, matFrac, matType, lambda, detType, fracTop, fracRight, fracBottom, fracLeft;
-  G4int crType, tapered, matFrac, matType, detType, fracTop, fracRight, fracBottom, fracLeft;
-  G4double lambda;
-  G4bool fModelSwitch;
-  G4double fRindexOpticalGlue;
-  G4double fRindexEpoxyAPD;
+        void Initialize(G4HCofThisEvent*);
+        G4bool ProcessHits(G4Step* aStep, G4TouchableHistory* ROhist);
 
-  vector<double>* fEnergy;
-  vector<double>* fLambda;
+        //A version of processHits that keeps aStep constant
+        G4bool ProcessHits_constStep(const G4Step* aStep,G4TouchableHistory* ROhist);//added in later from Lxe
 
-  static LcPMTSD* pmt_SD;
-//#ifdef NOREFLECTION
-// #ifdef TRACES
-//  static LcPMTSD* csiAbs_SD;
-// #endif /*TRACES*/
-//#endif /*NOREFLECTION*/
-  static LcAPDSD* apd_SD;
-  static LcCsISD* CsI_SD;
-#ifdef NEW_GEOMETRY
-  static LcPMTComptonSD* pmtNew_SD;
-  static LcCsISD* CsINew_SD;
-#endif /*NEW_GEOMETRY*/
-#ifdef PHOTON_COUNTER
-  static LcPhotonCounterSD* photonCounterSD;
-#endif /*PHOTON_COUNTER*/
+        void EndOfEvent(G4HCofThisEvent*);
+        G4int GetNumberOfHits(){return fNumberOfHits;};
+        void  SetNumberOfHits(G4int numberOfHits){fNumberOfHits = numberOfHits;};
+        void  IncNumberOfHits(){fNumberOfHits++;};
+
+    private:
+        LcPMTHitsCollection* PMTHitCollection;
+        G4int fNumberOfHits = 0;
 
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-#endif /*LcDetectorConstruction_h*/
+#endif
+

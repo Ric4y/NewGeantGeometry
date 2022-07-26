@@ -69,6 +69,14 @@ class LcPMTHit : public G4VHit
   void SetTrackLength (G4double l){length = l; };
   void SetWavelength     (G4double w)      { wavelength = w; };
   void SetTrackID(G4int aTrackID) {mTrackID=aTrackID;};
+  void SetPmtID(G4int pmt) {pmtID = pmt;};
+  void SetGlobalTime(G4double time) {globalTime = time;};
+
+  void SetGlobalTime2(G4double time) {globalTime2 = time;};
+  void SetTrackLength2 (G4double l){length2 = l; };
+  void SetWavelength2     (G4double w)      { wavelength2 = w; };
+  //void SetLocalTime(G4double time) {localTime = time;};
+  //void SetProperTime(G4double time) {properTime = time;};
 
       // G4int GetTrackID()    { return trackID; };
       // G4double GetEdep()    { return edep; };      
@@ -76,6 +84,15 @@ class LcPMTHit : public G4VHit
   G4double GetTrackLength(){ return length; };
   G4double GetWavelength(){ return wavelength; };
   G4int GetTrackID() {return mTrackID;};
+  G4int GetPmtID() {return pmtID;};
+  G4double GetGlobalTime() {return globalTime;};
+
+  G4double GetTrackLength2(){ return length2; };
+  G4double GetWavelength2(){ return wavelength2; };
+  G4double GetGlobalTime2() {return globalTime2;};
+  //G4double GetLocalTime() {return localTime;};
+  //G4double GetProperTime() {return properTime;};
+
 
   private:
   
@@ -85,6 +102,15 @@ class LcPMTHit : public G4VHit
   G4double      length;
   G4double wavelength;
   G4int mTrackID;
+  G4int pmtID;
+  G4double globalTime;
+
+  G4double      length2;
+  G4double wavelength2;
+  G4int mTrackID2;
+  G4double globalTime2;
+  //G4double localTime;
+  //G4double properTime;
   //  G4int photons;//added
 //  G4ThreeVector pos;
 //  G4VPhysicalVolume* physVol;

@@ -1,7 +1,7 @@
 #ifndef LCVARS_h
 #define LCVARS_h
 
-//#define NOVIS // no visuals
+#define NOVIS // no visuals
 #ifndef NOVIS
  #define G4VIS_USE
  #define G4UI_USE

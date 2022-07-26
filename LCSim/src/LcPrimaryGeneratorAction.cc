@@ -87,11 +87,12 @@ LcPrimaryGeneratorAction::LcPrimaryGeneratorAction(int crType, int posFrac)
 #endif /*COLL_GAMMA*/
 #if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
   //gammaDistX =  0.08*mm;//mm
-  gammaDistX =  5*cm + sqrt(3.0)*(52*mm + 400*um);//mm
-  gammaDistY = 70.0*mm;//mm
+  //gammaDistX =  5*cm + sqrt(3.0)*(52*mm + 400*um);//mm
+  gammaDistX = - 60.0*mm;
+  gammaDistY = 0.0*mm;//mm
   pos = 0.0;//mm
-  xCoor = 0.0;
-  yCoor = -1.0;
+  xCoor = 1.0;
+  yCoor = 0.0;
   zCoor = 0.0;
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, 60.0*mm, pos*mm)); 
   //particleGun->SetParticlePosition(G4ThreeVector(-10.0*mm, -60.0*mm, pos*mm)); 
@@ -165,8 +166,8 @@ void LcPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
   xCoor = sin(theta)*sin(phi);
   zCoor = sin(theta)*cos(phi);
   yCoor = cos(theta);
-  xCoor = 0.0;
-  yCoor = -1.0;
+  xCoor = 1.0;
+  yCoor = 0.0;
   zCoor = 0.0;
   particleGun->SetParticleMomentumDirection(G4ThreeVector(xCoor, yCoor, zCoor));
   //printf(">>>>>> omega = %4.3f\n", omega);

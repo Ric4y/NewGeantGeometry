@@ -89,24 +89,51 @@ extern LcUserTraceCollection* primTraceCollection;
 int detectedCounter = 0;
 #endif /*NOREFLECTOR*/
 
+
+
+#ifdef NEW_GEOMETRY
+
+        G4int hitCounter = 0;
+
+     LcEventAction::LcEventAction(int a): pmtCollIDNew(-1), apdCollIDNew(-1), csiCollIDNew(-1), pmtCollID(-1), apdCollID(-1), csiCollID(-1), photonCounterCollID(-1),
+     verbose(0), pmtThreshold(1)
+#else
 #ifndef PHOTON_COUNTER
 LcEventAction::LcEventAction(int a):pmtCollID(-1),apdCollID(-1),csiCollID(-1),verbose(0),pmtThreshold(1)
 #else
                                     LcEventAction::LcEventAction(int a): pmtCollID(-1), apdCollID(-1), csiCollID(-1), photonCounterCollID(-1),
                                     verbose(0), pmtThreshold(1)
+
 #endif /*PHOTON_COUNTER*/
+#endif /*NEW_GEOMETRY*/
 {detType = a;}
 LcEventAction::~LcEventAction(){;}
 
 void LcEventAction::BeginOfEventAction(const G4Event* anEvent)
 {
     G4int EventID=anEvent->GetEventID();
+        printf("%i pmtCollIDNewDEFAULT\n", pmtCollIDNew);
     //if(EventID % 300==0){  G4cout<< "Event "<<EventID<<G4endl;} //ADDED LATER
-    G4SDManager* SDman = G4SDManager::GetSDMpointer();   
-    if ((detType == 1 || detType == 3 || detType == 5 || detType == 7) && pmtCollID < 0)     
+    G4SDManager* SDman = G4SDManager::GetSDMpointer();
+    #ifdef NEW_GEOMETRY
+    if ((detType == 1 || detType == 3 || detType == 5 || detType == 7) && (pmtCollID < 0))   {
+        pmtCollID =    SDman->GetCollectionID("PMTCollection");
+    }
+    if ((detType == 1 || detType == 3 || detType == 5 || detType == 7) && (pmtCollIDNew < 0)) {
+        pmtCollIDNew = SDman->GetCollectionID("PMTNewCollection");
+    }
+    G4cout<<"pmtCollID = "<<pmtCollID<<G4endl;
+    G4cout<<"pmtCollIDNew = "<<pmtCollIDNew<<G4endl;
+    printf("%i pmtCollIDNewBEGIN\n", pmtCollIDNew);
+    #else
+    if ((detType == 1 || detType == 3 || detType == 5 || detType == 7) && (pmtCollID < 0))   {
         pmtCollID = SDman->GetCollectionID("PMTCollection");
-    else if ((detType == 2 || detType == 4) && apdCollID < 0)
+    }  else if ((detType == 2 || detType == 4) && apdCollID < 0) {
         apdCollID = SDman->GetCollectionID("APDCollection");
+    }
+    #endif /*NEW_GEOMETRY*/
+
+
 
     if(csiCollID < 0)
     {
@@ -122,6 +149,7 @@ void LcEventAction::BeginOfEventAction(const G4Event* anEvent)
 }
 void LcEventAction::EndOfEventAction(const G4Event* anEvent)
 {
+    G4int hits_limit = 59999;
     //G4int i,j;
     //G4VTrajectory* theTrajectory; 
     G4String pName;
@@ -188,7 +216,8 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
     //vScintTrackID.clear();
     //G4cout << "Optical photons created by scintillation: " << opPhotonCounter << G4endl;
 
-    LcPMTHitsCollection* PHC = 0;  
+    LcPMTHitsCollection* PHC = 0;
+    LcPMTHitsCollection* PHCNew = 0;
     LcAPDHitsCollection* AHC = 0;
 #ifdef PHOTON_COUNTER
     LcPMTHitsCollection* phcHC = 0;
@@ -196,12 +225,26 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
     // LcCsIHitsCollection* CHC = 0;
 
     //Get the hit collections
+    printf("Create PHCNew...\n");
+    printf("%i pmtCollIDNew\n", pmtCollIDNew);
     if(HCE)
-    { 
-        if((detType==1 || detType==3 || detType == 5 || detType == 7) && pmtCollID>=0)
+    {
+        #ifdef NEW_GEOMETRY
+        if((detType==1 || detType==3 || detType == 5 || detType == 7) && (pmtCollID >= 0)) {
+            PHC = (LcPMTHitsCollection*)(HCE->GetHC(pmtCollID));
+        }
+        if ((detType==1 || detType==3 || detType == 5 || detType == 7) &&  (pmtCollIDNew >= 0)) {
+            PHCNew = (LcPMTHitsCollection*)(HCE->GetHC(pmtCollIDNew));
+            printf("PHCNew created\n");
+        }
+        #else
+        if((detType==1 || detType==3 || detType == 5 || detType == 7) && pmtCollID>=0) {
             PHC = (LcPMTHitsCollection*)(HCE->GetHC(pmtCollID)); 
-        else if((detType==2|| detType==4) && apdCollID>=0)
-            AHC = (LcAPDHitsCollection*)(HCE->GetHC(apdCollID)); 
+        }
+        else if((detType==2|| detType==4) && apdCollID>=0) {
+            AHC = (LcAPDHitsCollection*)(HCE->GetHC(apdCollID));
+        }
+        #endif /*NEW_GEOMETRY*/
         //   if(csiCollID>=0)CHC = (LcCsIHitsCollection*)(HCE->GetHC(csiCollID)); 
 #ifdef PHOTON_COUNTER
         if (photonCounterCollID >= 0)
@@ -215,6 +258,9 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
     eventID= (G4double) (anEvent->GetEventID());
     //HitEvent.eventID=eventID;
     G4int nr_hits = 0;
+    #ifdef NEW_GEOMETRY
+        G4int nr_hitsNew = 0;
+    #endif /*NEW_GEOMETRY*/
     //G4int pmt_Hits = 0;
     HitEvent.npd=0;
     HitEvent.eventID=-1;
@@ -223,13 +269,16 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
     primTraceCollection->FindAndSetOrigin();
     LcUserTraceCollection* gammTraceCollection = new LcUserTraceCollection();
 #endif /*TRACES*/
+    G4int checkPmt = 0;
     if(PHC)
     {
         nr_hits =PHC->entries();
-        if (nr_hits>59999)
+        if (nr_hits > 0) checkPmt = 1;
+        if (nr_hits>hits_limit)
         {
             G4cout << ">>>> Warning! nr_hits is out of range! nr_hits=" << nr_hits << G4endl;
-            nr_hits=59999;
+        G4cout<<"############!!!!!!!!!!!@@@@@@@@@@~~~~~~~CHECK SCINTILLATION YIELD VALUE IN LcDetectorConstruction.cc"<<G4endl;
+            nr_hits=hits_limit;
         }
         G4cout<<"PMT hits:"<<nr_hits<<G4endl;
 #ifdef PHOTON_COUNTER
@@ -259,12 +308,20 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
         HitEvent.primaryPhot=phot;
         HitEvent.primaryCompt=compt;
 #endif /*TRACES*/
-        HitEvent.npd=nr_hits;
+        HitEvent.npd = nr_hits;
+        HitEvent.npd2 = 0;
         for (G4int i=0;i<nr_hits;i++)
         {
             LcPMTHit* aHit = (*PHC)[i];
             HitEvent.wpd[i] = aHit->GetWavelength();
             HitEvent.lpd[i] = aHit->GetTrackLength();
+            HitEvent.globalTime[i] = aHit->GetGlobalTime()/ns;
+
+            HitEvent.wpd2[i] = -1.0;
+            HitEvent.lpd2[i] = -1.0;
+            HitEvent.globalTime2[i] = -1.0;
+            //HitEvent.localTime[i] = aHit->GetLocalTime();
+            //HitEvent.properTime[i] = aHit->GetProperTime();
 #ifdef TRACES
             G4cout
                 <<"index="<<i
@@ -323,6 +380,10 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
             gammTraceCollection->AddTrace(gammaParentTrace);
 #endif /*NOREFLECTOR*/
 #endif /*TRACES*/
+            if (i == 0) {
+                HitEvent.pmtID = aHit->GetPmtID();
+                G4cout<<"PMTID = "<<aHit->GetPmtID()<<G4endl;
+            }
         }
 #ifdef TRACES
 #if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
@@ -330,6 +391,54 @@ void LcEventAction::EndOfEventAction(const G4Event* anEvent)
 #endif /*NOREFLECTOR*/
 #endif /*TRACES*/
     }
+
+#ifdef NEW_GEOMETRY
+        printf("PHCNew size = %i\n", PHCNew->entries());
+        G4int checkPmtNew = 0;
+        if(PHCNew)
+        {
+            nr_hitsNew = PHCNew->entries();
+            if (nr_hitsNew > 0) checkPmtNew = 1;
+            if (nr_hitsNew>hits_limit)
+            {
+                G4cout << ">>>> Warning! nr_hits is out of range! nr_hits=" << nr_hitsNew << G4endl;
+            G4cout<<"############!!!!!!!!!!!@@@@@@@@@@~~~~~~~CHECK SCINTILLATION YIELD VALUE IN LcDetectorConstruction.cc"<<G4endl;
+                nr_hitsNew=hits_limit;
+            }
+            G4cout<<"PMTNew hits:"<<nr_hitsNew<<G4endl;
+            printf("PMTNew hits: %i\n", nr_hitsNew);
+    #ifdef PHOTON_COUNTER
+            if (phcHC)
+            {
+                G4cout << "Photons leaked: " << phcHC->entries() << G4endl;
+            }
+    #endif /*PHOTON_COUNTER*/
+            //HitEvent.eventID=(int)anEvent->GetEventID();
+            HitEvent.npd2 = nr_hitsNew;
+            G4cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Npd2"<< nr_hitsNew<<G4endl;
+            if (!checkPmt) HitEvent.npd = 0;
+            for (G4int i=0;i<nr_hitsNew;i++)
+            {
+                LcPMTHit* aHit = (*PHCNew)[i];
+                HitEvent.wpd2[i] = aHit->GetWavelength2();
+                HitEvent.lpd2[i] = aHit->GetTrackLength2();
+                HitEvent.globalTime2[i] = aHit->GetGlobalTime2();
+                if (!checkPmt) {
+                    HitEvent.wpd[i] = -1.0;
+                    HitEvent.lpd[i] = -1.0;
+                    HitEvent.globalTime[i] = -1.0;
+                }
+                if (i == 0) {
+                    G4cout<<"PMTID = "<<aHit->GetPmtID()<<G4endl;
+                }
+
+            }
+        }
+        if ((checkPmt)&&(checkPmtNew)) hitCounter++;
+        G4cout << "Double hits since run start: " << hitCounter << G4endl;
+#endif /*NEW_GEOMETRY*/
+
+
     if(AHC)
     { 
         nr_hits =AHC->entries();

@@ -49,6 +49,15 @@
     // pos       = right.pos;  
     wavelength    = right.wavelength;
     length    = right.length;
+#ifdef NEW_GEOMETRY
+    globalTime = right.globalTime;
+
+    wavelength2    = right.wavelength2;
+    length2    = right.length2;
+    globalTime2 = right.globalTime2;
+    //localTime = right.localTime;
+    //properTime = right.properTime;
+#endif /*NEW_GEOMETRY*/
   }
 const LcPMTHit& LcPMTHit::operator=(const LcPMTHit& right)
   {
@@ -57,6 +66,15 @@ const LcPMTHit& LcPMTHit::operator=(const LcPMTHit& right)
     // pos       = right.pos; 
     wavelength    = right.wavelength;
     length    = right.length;
+#ifdef NEW_GEOMETRY
+    globalTime = right.globalTime;
+
+    wavelength2    = right.wavelength2;
+    length2    = right.length2;
+    globalTime2 = right.globalTime2;
+    //localTime = right.localTime;
+    //properTime = right.properTime;
+#endif /*NEW_GEOMETRY*/
     return *this;
   }
 G4int LcPMTHit::operator==(const LcPMTHit& right) const

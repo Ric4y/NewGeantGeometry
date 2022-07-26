@@ -5,6 +5,7 @@
 
 #include "LcDetectorConstruction.hh"
 #include "LcPMTSD.hh"
+#include "LcPMTComptonSD.hh"
 #include "LcCsISD.hh"
 #include "LcPhysicsList.hh"
 #include "G4Material.hh"
@@ -81,6 +82,10 @@ G4int arg;
 //--------------------------------------------------------------------------
 LcPMTSD* LcDetectorConstruction::pmt_SD;//SD
 G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
+#ifdef NEW_GEOMETRY
+LcCsISD* LcDetectorConstruction::CsINew_SD;
+LcPMTComptonSD* LcDetectorConstruction::pmtNew_SD;
+#endif /*NEW_GEOMETRY*/
 #ifdef NOREFLECTOR
  #ifdef TRACES
 LcPMTSD* LcDetectorConstruction::csiAbs_SD;//SD
@@ -437,9 +442,9 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     //Optical properties of BC400
     const G4int numPlast = 1;
-    G4double photEnergyPlast[numPlast] = {2.115*eV}; //from Saint Gobain for BC400
+    G4double photEnergyPlast[numPlast] = {3.004*eV}; //from Saint Gobain for BC400
     G4double fastSpectrumPlast[numPlast] = {1.0};
-    G4double PhotonEnergySpectrLambdaPlast[numPlast] = {423*nm}; ///from Saint Gobain for BC400
+    G4double PhotonEnergySpectrLambdaPlast[numPlast] = {3.004*eV}; ///from Saint Gobain for BC400
     G4double AbsorbtionSpectrumPlast[numPlast] = {1.6*m}; //from Saint Gobain for BC400
     G4double RefractIndSpectrumPlast[numPlast] = {1.58}; //from Saint Gobain for BC400
 
@@ -452,15 +457,15 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     PlastTable->AddConstProperty("SCINTILLATIONYIELD", 2.225e3/(0.662*MeV));
     PlastTable->AddConstProperty("RESOLUTIONSCALE", 0.01);
     PlastTable->AddConstProperty("YIELDRATIO", 1.00);
-    PlastTable->AddConstProperty("FASTTIMECONSTANT", 0.39*ns); //from Saint Gobain for BC400
-    PlastTable->AddConstProperty("SLOWTIMECONSTANT", 2.4*ns);//from Saint Gobain for BC400
+    PlastTable->AddConstProperty("FASTTIMECONSTANT", 1.8*ns); //equals to slow component to keep the proper shape of the signal.
+    PlastTable->AddConstProperty("SLOWTIMECONSTANT", 1.8*ns);//from Saint Gobain for BC404, we can find only this value. So we can assume that it's slow time component.
     PlastBC400->SetMaterialPropertiesTable(PlastTable);
 
     //Optical properties of Stilbene
     const G4int numStilb = 1;
     G4double photEnergyStilb[numStilb] = {1.9*eV}; //from Inradoptics, article: "Stilbene for Fast Neutron Detection"
     G4double fastSpectrumStilb[numStilb] = {1.0};
-    G4double PhotonEnergySpectrLambdaStilb[numStilb] = {380*nm}; // photEnergyStilb/200
+    G4double PhotonEnergySpectrLambdaStilb[numStilb] = {1.9*eV}; // photEnergyStilb/200
     G4double AbsorbtionSpectrumStilb[numStilb] = {1.5*m};
     G4double RefractIndSpectrumStilb[numStilb] = {1.626}; //from Leo
 
@@ -610,20 +615,31 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     G4Tubs* solidPmt = new G4Tubs("solidPmt", standInRadSize, standOutRadSize, pmtSizeZ/2.0, 0.0, 2.0 * M_PI);
 
+    //Solid for glass between scintillator and glue
+    G4double layerGlass = 1.0*mm;
+
+    G4Tubs* solidGlassScin = new G4Tubs("solidGlassScin", standInRadSize, standOutRadSize, layerGlass/2.0, 0.0, 2.0 * M_PI);
+
+    //Logical volume for glass between scintillator and glue
+    G4LogicalVolume* logicGlassScin = new G4LogicalVolume(solidGlassScin, Glass, "logicGlassScin");
+
     //Logical volume for glass window
     G4LogicalVolume* logicWinPmt = new G4LogicalVolume(solidWinPmt, Glass, "logicWinPmt");
 
     //Logical volume for pmt
     G4LogicalVolume* logicPmt = new G4LogicalVolume(solidPmt, Air, "logicWinPmt");
 
-    //Physical volume for glue between pmt and its window
-    G4VPhysicalVolume* PhysGluePmt = new G4PVPlacement(0, G4ThreeVector(0, 0, (standTubSizeZ + standGlueSizeZ)/ 2.0), logicGlue, "PhysGluePmt", logWorld, false, 0, 0);
+    //Physical volume for glass between scintillator and glue
+    G4VPhysicalVolume* physGlassScin = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, (standTubSizeZ + layerGlass)/ 2.0), logicGlassScin, "physGlassScin", logWorld, false, 0, 0);
+
+    //Physical volume for glue between glass of scintillator and window of pmt
+    G4VPhysicalVolume* PhysGluePmt = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, (standTubSizeZ + standGlueSizeZ)/ 2.0 + layerGlass), logicGlue, "PhysGluePmt", logWorld, false, 0, 0);
 
     //Physical volume for glass window
-    G4VPhysicalVolume* PhysWinPmt = new G4PVPlacement(0, G4ThreeVector(0, 0, (standTubSizeZ + glassSizeZ) / 2.0 + standGlueSizeZ), logicWinPmt, "PhysWinPmt", logWorld, false, 0, 0);
+    G4VPhysicalVolume* PhysWinPmt = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, (standTubSizeZ + glassSizeZ) / 2.0 + standGlueSizeZ + layerGlass), logicWinPmt, "PhysWinPmt", logWorld, false, 0, 0);
 
     //Physical volume for pmt
-    G4VPhysicalVolume* PhysPmt = new G4PVPlacement(0, G4ThreeVector(0, 0, (standTubSizeZ + pmtSizeZ) / 2.0 + standGlueSizeZ + glassSizeZ), logicPmt, "PhysPmt", logWorld, false, 0, 0);
+    G4VPhysicalVolume* PhysPmt = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, (standTubSizeZ + pmtSizeZ) / 2.0 + standGlueSizeZ + glassSizeZ + layerGlass), logicPmt, "PhysPmt", logWorld, false, 0, 0);
 
     logicPmt->SetVisAttributes(RSolid);
 
@@ -631,12 +647,13 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     logicGlue->SetVisAttributes(BSolid);
     //Optical properties between physical volumes
+    G4LogicalBorderSurface* ScinGlass = new G4LogicalBorderSurface("ScinGlass", physStandTub, physGlassScin, OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* ShellScin = new G4LogicalBorderSurface("ShellScin", physShell, physStandTub, OpticsPmtSurfaceDM);
 
     G4LogicalBorderSurface* BottomScin = new G4LogicalBorderSurface("BottomScin", physBottom, physStandTub, OpticsPmtSurfaceDM);
 
-    G4LogicalBorderSurface* GlueScin = new G4LogicalBorderSurface("GlueScin", PhysGluePmt, physStandTub, OpticsPmtSurfaceDD);
+    G4LogicalBorderSurface* GlueGlass1 = new G4LogicalBorderSurface("GlueGlass1", PhysGluePmt, physGlassScin, OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* GlueGlass = new G4LogicalBorderSurface("GlueGlass", PhysGluePmt, PhysWinPmt, OpticsPmtSurfaceDD);
 
@@ -655,7 +672,7 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     G4double trdSizeZ = size * sqrt(3.0)/2.0;
 
 
-    G4double step = 5.0*cm;
+    G4double step = 0.0*cm;
 
     G4RotationMatrix* rotMatr = new G4RotationMatrix();
     rotMatr->rotateX(0.0);
@@ -730,35 +747,39 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     G4VPhysicalVolume* physHex = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, 0.0), logicHex, "physHex", logWorld, false, 0, 0);
     
     //logicHex->SetVisAttributes(YSolid);
-    
 
-    //Physical volume for glue between pmt and its window for new detector
+    //Logical volume for new pmt
+    G4LogicalVolume* logicPmtNew = new G4LogicalVolume(solidPmt, Air, "logicWinPmt");
+    
+   //Physical volume for glue between pmt and its window for new detector
    G4VPhysicalVolume* PhysGluePmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, layerSizeX/2.0 - forcut + standGlueSizeZ/2.0), logicGlue, "PhysGluePmtNew", logWorld, false, 0, 0);
 
     ///Physical volume for glass window for new detector
     G4VPhysicalVolume* PhysWinPmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, layerSizeX/2.0 - forcut + glassSizeZ/2.0 + standGlueSizeZ), logicWinPmt, "PhysWinPmtNew", logWorld, false, 0, 0);
 
     //Physical volume for pmt
-    G4VPhysicalVolume* PhysPmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, layerSizeX/2.0 - forcut + glassSizeZ + standGlueSizeZ + pmtSizeZ/2.0), logicPmt, "PhysPmtNew", logWorld, false, 0, 0);
+    G4VPhysicalVolume* PhysPmtNew = new G4PVPlacement(0, G4ThreeVector(sizeNew*sqrt(3.0) + step, 0.0, layerSizeX/2.0 - forcut + glassSizeZ + standGlueSizeZ + pmtSizeZ/2.0), logicPmtNew, "PhysPmtNew", logWorld, false, 0, 0);
 
     //Logical surface
-    G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmt, OpticsPmtSurfaceDD);
+    G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmtNew, OpticsPmtSurfaceDD);
 
     //Optical properties between physical volumes for new detector
    G4LogicalBorderSurface* HexLayer = new G4LogicalBorderSurface("HexLayer", physLayer, physHex, OpticsPmtSurfaceDM);
 
-    G4LogicalBorderSurface* GlueScinNew = new G4LogicalBorderSurface("GlueScinNew", PhysGluePmtNew, physHex, OpticsPmtSurfaceDD);
+    G4LogicalBorderSurface* GlassScinNew = new G4LogicalBorderSurface("GlueScinNew", PhysGluePmtNew, physHex, OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* PmtWinshell = new G4LogicalBorderSurface("GlueScinNew", PhysWinPmtNew, physLayer, OpticsPmtSurfaceDD);
     
     G4LogicalBorderSurface* GlueShell = new G4LogicalBorderSurface("GlueShell", PhysGluePmtNew, physLayer, OpticsPmtSurfaceDM);
+
     
     //G4LogicalBorderSurface* PmtShell = new G4LogicalBorderSurface("PmtShell", PhysPmtNew, physLayer, OpticsPmtSurfaceDM);
-    
-    G4LogicalBorderSurface* GlueGlassNew = new G4LogicalBorderSurface("GlueGlassNew", PhysGluePmtNew, PhysWinPmtNew, OpticsPmtSurfaceDD);
+
+    G4LogicalBorderSurface* GlueGlassNew2 = new G4LogicalBorderSurface("GlueGlassNew2", PhysGluePmtNew, PhysWinPmtNew, OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* PmtGlassNew = new G4LogicalBorderSurface("PmtGlassNew", PhysWinPmtNew,  PhysPmtNew, OpPmtSurfaceNew);
     
+
     //Sensitive detector for pmt and stilbene
     G4SDManager* SDman = G4SDManager::GetSDMpointer();// is G4manager class for sensitive detectors
         if(!pmt_SD){//check if pmt_SD does not exists otherwise create it
@@ -773,10 +794,15 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
          }
 
              //Sensitive detector for new pmt and plastic
-        if(!CsI_SD){//check if CsI_SD does not exists otherwise create it
-                CsI_SD = new LcCsISD("CsI1");
-                SDman->AddNewDetector(CsI_SD);//now we've created the SD so it exists(no doubt)
-                logicHex->SetSensitiveDetector(CsI_SD);
+        if(!pmtNew_SD){//check if pmt_SD does not exists otherwise create it
+            pmtNew_SD = new LcPMTComptonSD("PMTNew");
+            SDman->AddNewDetector(pmtNew_SD); //now we've created the SD so it exists(no doubt)
+        }
+        logicPmtNew->SetSensitiveDetector(pmtNew_SD);
+        if(!CsINew_SD){//check if CsI_SD does not exists otherwise create it
+                CsINew_SD = new LcCsISD("CsINew");
+                SDman->AddNewDetector(CsINew_SD);//now we've created the SD so it exists(no doubt)
+                logicHex->SetSensitiveDetector(CsINew_SD);
          }
 
 

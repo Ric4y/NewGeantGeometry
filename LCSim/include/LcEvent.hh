@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "LcVars.hh"
-
+const G4int hits_limit = 8000;
 typedef struct{ 	
                         int eventID;
 
@@ -18,13 +18,25 @@ typedef struct{
 
                         int primaryPhot;
                         int primaryCompt;
+#ifdef NEW_GEOMETRY
+                        int pmtID;
+            G4double globalTime2[hits_limit];
+            //G4double localTime[hits_limit];
+            //G4double properTime[hits_limit];
+            G4int npp2;
+			G4double wpp2[hits_limit];
 
+			G4int npd2;
+			G4double wpd2[hits_limit];
+			G4double lpd2[hits_limit];
+            G4double globalTime[hits_limit];
+#endif /*NEW_GEOMETRY*/
 			G4int npp;
-			G4double wpp[60000];
+			G4double wpp[hits_limit];
 
 			G4int npd;
-			G4double wpd[60000];
-			G4double lpd[60000];
+			G4double wpd[hits_limit];
+			G4double lpd[hits_limit];
 #ifdef TRACES
                         std::vector<double> distanceToOrigin;
                         std::vector<int> creatorProcessID;

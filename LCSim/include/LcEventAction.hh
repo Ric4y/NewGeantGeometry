@@ -68,6 +68,12 @@ class LcEventAction : public G4UserEventAction
   G4int  pmtCollID; 
   G4int  apdCollID;
   G4int  csiCollID;
+#ifdef NEW_GEOMETRY
+  G4int detTypeNew;
+  G4int  pmtCollIDNew;
+  G4int  apdCollIDNew;
+  G4int  csiCollIDNew;
+#endif /*NEW_GEOMETRY*/
 #ifdef PHOTON_COUNTER
   G4int photonCounterCollID;
 #endif /*PHOTON_COUNTER*/

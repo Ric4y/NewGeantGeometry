@@ -31,7 +31,7 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 #include <string>
 
-#include "LcPMTSD.hh"
+#include "LcPMTComptonSD.hh"
 #include "LcPMTHit.hh"
 #include "LcDetectorConstruction.hh"
 #include "G4VPhysicalVolume.hh"
@@ -55,24 +55,20 @@
 
 #include "LcVars.hh"
 
-LcPMTSD::LcPMTSD(G4String name):G4VSensitiveDetector(name),PMTHitCollection(0)
+LcPMTComptonSD::LcPMTComptonSD(G4String name):G4VSensitiveDetector(name),PMTHitCollection(0)
 {
-    #ifdef NEW_GEOMETRY
-    G4String checkPmt="PMT1";
-    if (name == checkPmt) {
+    G4String checkPmt2 = "PMTNew";
+
+    if (name == checkPmt2) {
         G4String HCname;
-        collectionName.insert(HCname="PMTCollection");
+        collectionName.insert(HCname="PMTNewCollection");
     }
-#else
 
 
-G4String HCname;
-    collectionName.insert(HCname="PMTCollection");
-#endif /*NEW_GEOMETRY*/
 }
-LcPMTSD::~LcPMTSD(){ }
+LcPMTComptonSD::~LcPMTComptonSD(){ }
 
-void LcPMTSD::Initialize(G4HCofThisEvent* HCE)
+void LcPMTComptonSD::Initialize(G4HCofThisEvent* HCE)
 { 
     PMTHitCollection = new LcPMTHitsCollection (SensitiveDetectorName,collectionName[0]); 
     static G4int HCID = -1;
@@ -80,10 +76,10 @@ void LcPMTSD::Initialize(G4HCofThisEvent* HCE)
         HCID = G4SDManager::GetSDMpointer()->GetCollectionID(collectionName[0]); 
     }
     HCE->AddHitsCollection( HCID, PMTHitCollection );
-    LcPMTSD::SetNumberOfHits(0);
+    LcPMTComptonSD::SetNumberOfHits(0);
 }
 
-G4bool LcPMTSD::ProcessHits(G4Step* aStep, G4TouchableHistory* )
+G4bool LcPMTComptonSD::ProcessHits(G4Step* aStep, G4TouchableHistory* )
 { 
     if(aStep->GetTrack()->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition()) return false;
 
@@ -125,26 +121,26 @@ G4bool LcPMTSD::ProcessHits(G4Step* aStep, G4TouchableHistory* )
 
     //G4double edep = aStep->GetTotalEnergyDeposit();
     G4double edep = photonEnergy;
-#if !defined(NOREFLECTOR) || defined(NEW_GEOMETRY)
+
+
+
+
     if(edep == 0.) return false;
-#endif /*NOREFLECTOR*/
     LcPMTHit* newHit = new LcPMTHit();
-#if defined(NOREFLECTOR) || !defined(NEW_GEOMETRY)
-    newHit->SetWavelength(1.2398/edep/1000.);//conversion of photon energy to wavelength:
+    newHit->SetWavelength2(1.2398/edep/1000.);//conversion of photon energy to wavelength:
                                              //lambda=hbar*c/E
-#else
-    newHit->SetWavelength(1234.8/aStep->GetTrack()->GetTotalEnergy());
-#endif /*NOREFLECTOR*/
-    newHit->SetTrackLength(aStep->GetTrack()->GetTrackLength());
-    newHit->SetTrackID(aStep->GetTrack()->GetTrackID());
-    newHit->SetPmtID(1);
-    newHit->SetGlobalTime(aStep->GetTrack()->GetGlobalTime());
-    //newHit->SetLocalTime(aStep->GetTrack()->GetLocalTime());
-    //newHit->SetProperTime(aStep->GetTrack()->GetProperTime());
+
+
+
+
+
+    newHit->SetTrackLength2(aStep->GetTrack()->GetTrackLength());
+    //newHit->SetTrackID(aStep->GetTrack()->GetTrackID());
+    //newHit->SetPmtID(2);
+    newHit->SetGlobalTime2(aStep->GetTrack()->GetGlobalTime());
 
     PMTHitCollection->insert(newHit);
-    LcPMTSD::IncNumberOfHits();
-
+    LcPMTComptonSD::IncNumberOfHits();
     //G4cout << "In volume: " << aStep->GetPreStepPoint()->GetPhysicalVolume()->GetName() 
     //       << "; Nomber of hits: " << LcPMTSD::GetNumberOfHits() <<  G4endl;
     
@@ -152,12 +148,12 @@ G4bool LcPMTSD::ProcessHits(G4Step* aStep, G4TouchableHistory* )
 
     return true;
 }
-G4bool LcPMTSD::ProcessHits_constStep( const G4Step* aStep,G4TouchableHistory*)
+G4bool LcPMTComptonSD::ProcessHits_constStep( const G4Step* aStep,G4TouchableHistory*)
 {  
     return false;
 }
 
-void LcPMTSD::EndOfEvent(G4HCofThisEvent* )
+void LcPMTComptonSD::EndOfEvent(G4HCofThisEvent* )
 {  
 }
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

@@ -130,6 +130,17 @@ public:
         LcTree->Branch("npd",&LcEvent.npd,"npd/I");
         LcTree->Branch("wpd",LcEvent.wpd,"wpd[npd]/D");
         LcTree->Branch("lpd",LcEvent.lpd,"lpd[npd]/D");
+        LcTree->Branch("globalTime", LcEvent.globalTime, "globalTime[npd]/D");
+
+        //LcTree->Branch("npp2",&LcEvent.npp2,"npp2/I");
+        //LcTree->Branch("wpp2", LcEvent.wpp2,"wpp2[npp2]/D");
+
+        LcTree->Branch("npd2",&LcEvent.npd2,"npd2/I");
+        LcTree->Branch("wpd2",LcEvent.wpd2,"wpd2[npd2]/D");
+        LcTree->Branch("lpd2",LcEvent.lpd2,"lpd2[npd2]/D");
+        LcTree->Branch("globalTime2", LcEvent.globalTime2, "globalTime2[npd2]/D");
+        //LcTree->Branch("localTime",  LcEvent.localTime, "localTime[npd]/D");
+        //LcTree->Branch("properTime", LcEvent.properTime, "properTime[npd]/D");
 #ifdef TRACES
         LcTree->Branch("distanceToOrigin",&(LcEvent.distanceToOrigin));
         LcTree->Branch("creatorProcessID",&(LcEvent.creatorProcessID));
@@ -206,11 +217,17 @@ public:
 #endif /*TRACES*/
         LcEvent.eventID=Event.eventID;
         LcEvent.npd=Event.npd;
-        
+        LcEvent.npd2=Event.npd2;
+
         for(G4int i = 0; i < LcEvent.npd; i++)
         {
             LcEvent.wpd[i] = Event.wpd[i];
             LcEvent.lpd[i] = Event.lpd[i];
+            LcEvent.globalTime[i] = Event.globalTime[i];
+
+
+            //LcEvent.localTime[i] = Event.localTime[i];
+            //LcEvent.properTime[i] = Event.properTime[i];
             /*
                LcEvent.reflections[i]=Event.reflections[i];
                for (int j=0;i<LcEvent.reflections[i];i++)
@@ -247,6 +264,14 @@ public:
             (LcEvent.processID).push_back(processIdContainer);
 #endif /*TRACES*/
         }
+
+        for (G4int i = 0; i < LcEvent.npd2; i++)
+        {
+            LcEvent.wpd2[i] = Event.wpd2[i];
+            LcEvent.lpd2[i] = Event.lpd2[i];
+            LcEvent.globalTime2[i] = Event.globalTime2[i];
+        }
+
 #ifdef TRACES
         for (int i=0;i<(int)(Event.parentGammaTrackID).size();i++)
         {

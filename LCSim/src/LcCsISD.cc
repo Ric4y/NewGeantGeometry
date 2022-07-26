@@ -31,6 +31,8 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 //#include "Event.hh"
+#include <string>
+
 #include "LcCsISD.hh"
 #include "LcCsIHit.hh"
 #include "LcDetectorConstruction.hh"
@@ -56,8 +58,21 @@
 //extern float exNbHits;
 LcCsISD::LcCsISD(G4String name):G4VSensitiveDetector(name),CsIHitCollection(0)
 {
+#ifdef NEW_GEOMETRY
+    G4String checkName="CsI1";
+    G4String checkName2 = "CsINew";
+    if (name == checkName) {
     G4String HCname;
     collectionName.insert(HCname="CsICollection");
+}
+if (name == checkName2) {
+    G4String HCname;
+    collectionName.insert(HCname="CsINewCollection");
+}
+#else
+G4String HCname;
+collectionName.insert(HCname="CsICollection");
+#endif /*NEW_GEOMETRY*/
 }
 LcCsISD::~LcCsISD(){ }
 
