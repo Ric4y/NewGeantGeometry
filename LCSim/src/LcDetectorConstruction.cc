@@ -417,6 +417,53 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     PlastBC400->AddElement(elH, 5);
     PlastBC400->AddElement(elC,  5);
 
+
+    //Optical properties of BC400
+    const G4int numPlast = 1;
+    G4double photEnergyPlast[numPlast] = {3.004*eV}; //from Saint Gobain for BC400
+    G4double fastSpectrumPlast[numPlast] = {1.0};
+    G4double PhotonEnergySpectrLambdaPlast[numPlast] = {3.004*eV}; ///from Saint Gobain for BC400
+    G4double AbsorbtionSpectrumPlast[numPlast] = {1.6*m}; //from Saint Gobain for BC400
+    G4double RefractIndSpectrumPlast[numPlast] = {1.58}; //from Saint Gobain for BC400
+
+    G4MaterialPropertiesTable* PlastTable = new G4MaterialPropertiesTable();
+    PlastTable->AddProperty("RINDEX", photEnergyPlast, RefractIndSpectrumPlast, numPlast);
+    PlastTable->AddProperty("ABSLENGTH", PhotonEnergySpectrLambdaPlast, AbsorbtionSpectrumPlast, numPlast);
+    PlastTable->AddProperty("FASTCOMPONENT", photEnergyPlast, fastSpectrumPlast, numPlast);
+    PlastTable->AddProperty("SLOWCOMPONENT", photEnergyPlast, fastSpectrumPlast, numPlast);
+    //StilbTable->AddConstProperty("SCINTILLATIONYIELD", 6720.0/(1.0*MeV));
+    //PlastTable->AddConstProperty("SCINTILLATIONYIELD", 0.9*11300.0/(1.0*MeV));
+    PlastTable->AddConstProperty("SCINTILLATIONYIELD", 2.225e3/(0.662*MeV));
+    PlastTable->AddConstProperty("RESOLUTIONSCALE", 0.01);
+    PlastTable->AddConstProperty("YIELDRATIO", 1.00);
+    PlastTable->AddConstProperty("FASTTIMECONSTANT", 1.8*ns); //equals to slow component to keep the proper shape of the signal.
+    PlastTable->AddConstProperty("SLOWTIMECONSTANT", 1.8*ns);//from Saint Gobain for BC404, we can find only this value. So we can assume that it's slow time component.
+    PlastBC400->SetMaterialPropertiesTable(PlastTable);
+
+    //Optical properties of Stilbene
+    const G4int numStilb = 1;
+    G4double photEnergyStilb[numStilb] = {1.9*eV}; //from Inradoptics, article: "Stilbene for Fast Neutron Detection"
+    G4double fastSpectrumStilb[numStilb] = {1.0};
+    G4double PhotonEnergySpectrLambdaStilb[numStilb] = {1.9*eV};
+    G4double AbsorbtionSpectrumStilb[numStilb] = {1.5*m};
+    G4double RefractIndSpectrumStilb[numStilb] = {1.626}; //from Leo
+
+    G4MaterialPropertiesTable* StilbTable = new G4MaterialPropertiesTable();
+    StilbTable->AddProperty("RINDEX", photEnergyStilb, RefractIndSpectrumStilb, numStilb);
+    StilbTable->AddProperty("ABSLENGTH", PhotonEnergySpectrLambdaStilb, AbsorbtionSpectrumStilb, numStilb);
+    StilbTable->AddProperty("FASTCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
+    StilbTable->AddProperty("SLOWCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
+    //StilbTable->AddConstProperty("SCINTILLATIONYIELD", 6720.0/(1.0*MeV));
+    //StilbTable->AddConstProperty("SCINTILLATIONYIELD", 0.9*8350.0/(1.0*MeV));
+    StilbTable->AddConstProperty("SCINTILLATIONYIELD", 4.449e3/(0.662*MeV));
+    StilbTable->AddConstProperty("RESOLUTIONSCALE", 0.01);
+    StilbTable->AddConstProperty("YIELDRATIO", 1.00);
+    StilbTable->AddConstProperty("FASTTIMECONSTANT", 0.36*ns); //from Leo
+    StilbTable->AddConstProperty("SLOWTIMECONSTANT", 4.5*ns);
+    Stilbene->SetMaterialPropertiesTable(StilbTable);
+
+//////***************first detector with stilbene********************////////
+
     //Standart Tube
     G4double standInRadSize = 0.0*mm;
     G4double standOutRadSize = 43.5*mm;
@@ -437,52 +484,9 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     //Solid for glue
     G4double standGlueSizeZ = 20*um;
+    G4double sidePmt = 30.0*mm;
 
-    G4Tubs* solidGlue = new G4Tubs("solidGlue", standInRadSize, standOutRadSize, standGlueSizeZ/2.0, 0.0, 2.0 * M_PI);
-
-    //Optical properties of BC400
-    const G4int numPlast = 1;
-    G4double photEnergyPlast[numPlast] = {3.004*eV}; //from Saint Gobain for BC400
-    G4double fastSpectrumPlast[numPlast] = {1.0};
-    G4double PhotonEnergySpectrLambdaPlast[numPlast] = {3.004*eV}; ///from Saint Gobain for BC400
-    G4double AbsorbtionSpectrumPlast[numPlast] = {1.6*m}; //from Saint Gobain for BC400
-    G4double RefractIndSpectrumPlast[numPlast] = {1.58}; //from Saint Gobain for BC400
-
-    G4MaterialPropertiesTable* PlastTable = new G4MaterialPropertiesTable();
-    PlastTable->AddProperty("RINDEX", photEnergyPlast, RefractIndSpectrumPlast, numPlast);
-    PlastTable->AddProperty("ABSLENGTH", PhotonEnergySpectrLambdaPlast, AbsorbtionSpectrumPlast, numPlast);
-    PlastTable->AddProperty("FASTCOMPONENT", photEnergyPlast, fastSpectrumPlast, numPlast);
-    PlastTable->AddProperty("SLOWCOMPONENT", photEnergyPlast, fastSpectrumPlast, numPlast);
-    //StilbTable->AddConstProperty("SCINTILLATIONYIELD", 6720.0/(1.0*MeV));
-    PlastTable->AddConstProperty("SCINTILLATIONYIELD", 2.225e3/(0.662*MeV));
-    PlastTable->AddConstProperty("RESOLUTIONSCALE", 0.01);
-    PlastTable->AddConstProperty("YIELDRATIO", 1.00);
-    PlastTable->AddConstProperty("FASTTIMECONSTANT", 1.8*ns); //equals to slow component to keep the proper shape of the signal.
-    PlastTable->AddConstProperty("SLOWTIMECONSTANT", 1.8*ns);//from Saint Gobain for BC404, we can find only this value. So we can assume that it's slow time component.
-    PlastBC400->SetMaterialPropertiesTable(PlastTable);
-
-    //Optical properties of Stilbene
-    const G4int numStilb = 1;
-    G4double photEnergyStilb[numStilb] = {1.9*eV}; //from Inradoptics, article: "Stilbene for Fast Neutron Detection"
-    G4double fastSpectrumStilb[numStilb] = {1.0};
-    G4double PhotonEnergySpectrLambdaStilb[numStilb] = {1.9*eV}; // photEnergyStilb/200
-    G4double AbsorbtionSpectrumStilb[numStilb] = {1.5*m};
-    G4double RefractIndSpectrumStilb[numStilb] = {1.626}; //from Leo
-
-    G4MaterialPropertiesTable* StilbTable = new G4MaterialPropertiesTable();
-    StilbTable->AddProperty("RINDEX", photEnergyStilb, RefractIndSpectrumStilb, numStilb);
-    StilbTable->AddProperty("ABSLENGTH", PhotonEnergySpectrLambdaStilb, AbsorbtionSpectrumStilb, numStilb);
-    StilbTable->AddProperty("FASTCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
-    StilbTable->AddProperty("SLOWCOMPONENT", photEnergyStilb, fastSpectrumStilb, numStilb);
-    //StilbTable->AddConstProperty("SCINTILLATIONYIELD", 6720.0/(1.0*MeV));
-    StilbTable->AddConstProperty("SCINTILLATIONYIELD", 4.449e3/(0.662*MeV));
-    StilbTable->AddConstProperty("RESOLUTIONSCALE", 0.01);
-    StilbTable->AddConstProperty("YIELDRATIO", 1.00);
-    StilbTable->AddConstProperty("FASTTIMECONSTANT", 0.36*ns); //from Leo
-    StilbTable->AddConstProperty("SLOWTIMECONSTANT", 4.5*ns);
-    Stilbene->SetMaterialPropertiesTable(StilbTable);
-
-//////***************first detector with stilbene********************////////
+    G4Box* solidGlue = new G4Box("solidGlue", sidePmt/2.0, sidePmt/2.0, standGlueSizeZ/2.0);
     
     //Logical Volume for Standart tube
 
@@ -520,29 +524,32 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
 
     //Creating properties of optical surface dielectric - metal
-    const G4int number = 1;
-    G4double OptPhoton[number] = {1.9*eV};
+    const G4int number = 2;
+    G4double OptPhoton[number] = {1.9*eV, 3.004*eV};
     //G4double sigma_alpha=0.1;
     G4double sigma_alpha_polishedDM = 0.077;
     G4double sigma_alpha_unpolishedDM = 0.162;
-    //G4double OptRefractivityDM[number] = {1.0};
+    G4double OptRefractivityDM[number] = {1.0, 1.0};
     //G4double SpecularLobe[num]    = {1};//refl. about facet normal //1
     //G4double SpecularSpike[num]   = {0};//refl. about avg suface normal //0
-    G4double OptSpecularLobe[number]    = {0.01};//refl. about facet normal //1
-    G4double OptSpecularSpike[number]   = {1 - OptSpecularLobe[number]};//refl. about avg suface normal //0
-    G4double OptBackscatter[number]     = {0};//refl. in groove, //diffuse lobe constant
+    G4double OptSpecularLobe[number]    = {0.5, 0.5};//refl. about facet normal //1
+    G4double OptSpecularSpike[number]   = {0.5, 0.5};//refl. about avg suface normal //0
+    G4double OptBackscatter[number]     = {0, 0};//refl. in groove, //diffuse lobe constant
     G4double AbsorptionSpectrumDM[number] = {};
     G4double ScintilFastSpectrumDM[number] = {};
 
     //G4double Reflectivity[num] = {0.98};
     //G4double Efficiency[num]   = {0.02};
-    G4double OptReflectivityDM[number] = {0.998};
-    G4double OptEfficiencyDM[number]   = {1 - OptReflectivityDM[number]};
+    G4double OptReflectivityDM[number] = {0.9974, 0.9974};
+    G4double OptEfficiencyDM[number]   = {0.0026, 0.0026};
     //G4double Reflectivity[num] = {1.0};
     //G4double Efficiency[num]   = {0.0};
 
     G4MaterialPropertiesTable* PmtOpticsTableDM = new G4MaterialPropertiesTable();
-    //PmtOpticsTableDM->AddProperty("RINDEXOPTDM", OptPhoton, OptRefractivityDM, number);
+    PmtOpticsTableDM->AddProperty("RINDEX", OptPhoton, OptRefractivityDM, number);
+    PmtOpticsTableDM->AddProperty("SPECULARLOBECONSTANT", OptPhoton, OptSpecularLobe, number);
+    PmtOpticsTableDM->AddProperty("SPECULARSPIKECONSTANT", OptPhoton, OptSpecularSpike, number);
+    PmtOpticsTableDM->AddProperty("BACKSCATTERCONSTANT", OptPhoton, OptBackscatter, number);
     PmtOpticsTableDM->AddProperty("REFLECTIVITY", OptPhoton, OptReflectivityDM, number);
     PmtOpticsTableDM->AddProperty("EFFICIENCY",   OptPhoton, OptEfficiencyDM, number);
 
@@ -551,6 +558,49 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     OpticsPmtSurfaceDM->SetFinish(polished);
     OpticsPmtSurfaceDM->SetModel(unified);
     OpticsPmtSurfaceDM->SetMaterialPropertiesTable(PmtOpticsTableDM);
+
+
+
+    //surface properties for TiO
+    G4MaterialPropertiesTable* TiOSurfTable = new G4MaterialPropertiesTable();
+    TiOSurfTable->AddProperty("RINDEX", OptPhoton, OptRefractivityDM, number);
+    TiOSurfTable->AddProperty("REFLECTIVITY", OptPhoton, OptReflectivityDM, number);
+    TiOSurfTable->AddProperty("EFFICIENCY",   OptPhoton, OptEfficiencyDM,   number);
+
+    G4OpticalSurface* TiOSurface = new G4OpticalSurface("TiOSurface");
+    TiOSurface->SetType(dielectric_LUT);
+    TiOSurface->SetFinish(polishedtioair);
+    TiOSurface->SetMaterialPropertiesTable(TiOSurfTable);
+    TiOSurface->SetModel(LUT);
+
+
+    //surface properties for teflon
+    G4MaterialPropertiesTable* TeflonSurfTable = new G4MaterialPropertiesTable();
+    TeflonSurfTable->AddProperty("RINDEX", OptPhoton, OptRefractivityDM, number);
+    TeflonSurfTable->AddProperty("REFLECTIVITY", OptPhoton, OptReflectivityDM, number);
+    TeflonSurfTable->AddProperty("EFFICIENCY",   OptPhoton, OptEfficiencyDM,   number);
+
+    G4OpticalSurface* TeflonSurface = new G4OpticalSurface("TeflonSurface");
+    TeflonSurface->SetType(dielectric_LUT);
+    TeflonSurface->SetFinish(polishedteflonair);
+    TeflonSurface->SetMaterialPropertiesTable(TeflonSurfTable);
+    TeflonSurface->SetModel(LUT);
+
+    //surface properties for ESR
+    G4MaterialPropertiesTable* ESRSurfTable = new G4MaterialPropertiesTable();
+    ESRSurfTable->AddProperty("RINDEX", OptPhoton, OptRefractivityDM, number);
+    ESRSurfTable->AddProperty("REFLECTIVITY", OptPhoton, OptReflectivityDM, number);
+    ESRSurfTable->AddProperty("EFFICIENCY",   OptPhoton, OptEfficiencyDM,   number);
+
+    G4OpticalSurface* ESRSurface = new G4OpticalSurface("TeflonSurface");
+    ESRSurface->SetType(dielectric_LUTDAVIS);
+    ESRSurface->SetFinish(PolishedESR_LUT);
+    ESRSurface->SetMaterialPropertiesTable(ESRSurfTable);
+    ESRSurface->SetModel(DAVIS);
+
+
+
+
 
 
         /// ******************** PMT surface******************
@@ -608,17 +658,23 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     //Solid for glass window of pmt
     G4double glassSizeZ = 100.0*um;
 
-    G4Tubs* solidWinPmt = new G4Tubs("solidWinPmt", standInRadSize, standOutRadSize, glassSizeZ/2.0, 0.0, 2.0 * M_PI);
+    G4Box* solidWinPmt = new G4Box("solidWinPmt", sidePmt/2.0, sidePmt/2.0, glassSizeZ/2.0);
 
     //Solid for pmt
     G4double pmtSizeZ = 2.0*cm;
 
-    G4Tubs* solidPmt = new G4Tubs("solidPmt", standInRadSize, standOutRadSize, pmtSizeZ/2.0, 0.0, 2.0 * M_PI);
+    G4Box* solidPmt = new G4Box("solidPmt", sidePmt/2.0, sidePmt/2.0, pmtSizeZ/2.0);
 
     //Solid for glass between scintillator and glue
     G4double layerGlass = 1.0*mm;
 
-    G4Tubs* solidGlassScin = new G4Tubs("solidGlassScin", standInRadSize, standOutRadSize, layerGlass/2.0, 0.0, 2.0 * M_PI);
+    G4Box* solidGlassScin = new G4Box("solidGlassScin", sidePmt/2.0, sidePmt/2.0, layerGlass/2.0);
+
+    //Solid for cutting hole inside the shell for PMT
+    G4double cutForPmt = layer;
+    G4Box* solidCutForPmtPrepare = new G4Box("solidCutForPmtPrepare", sidePmt/2.0, sidePmt/2.0, cutForPmt/2.0);
+
+    G4VSolid* solidCutForPmt = new G4SubtractionSolid("solidCutForPmt", solidBottom, solidCutForPmtPrepare);
 
     //Logical volume for glass between scintillator and glue
     G4LogicalVolume* logicGlassScin = new G4LogicalVolume(solidGlassScin, Glass, "logicGlassScin");
@@ -628,6 +684,9 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     //Logical volume for pmt
     G4LogicalVolume* logicPmt = new G4LogicalVolume(solidPmt, Air, "logicWinPmt");
+
+    //Logical volume for shell near the PMT with hole
+    G4LogicalVolume* logicBottomPmt = new G4LogicalVolume(solidCutForPmt, Al, "logicBottomPmt");
 
     //Physical volume for glass between scintillator and glue
     G4VPhysicalVolume* physGlassScin = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, (standTubSizeZ + layerGlass)/ 2.0), logicGlassScin, "physGlassScin", logWorld, false, 0, 0);
@@ -645,19 +704,27 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
 
     logicWinPmt->SetVisAttributes(GSolid);
 
+    //Physical volume for shell near the PMT with hole
+    G4VPhysicalVolume* physBottomPmt = new G4PVPlacement(0, G4ThreeVector(0.0, 0.0, (standTubSizeZ + cutForPmt)/ 2.0), logicBottomPmt, "physBottomPmt", logWorld, false, 0, 0);
+
     logicGlue->SetVisAttributes(BSolid);
     //Optical properties between physical volumes
     G4LogicalBorderSurface* ScinGlass = new G4LogicalBorderSurface("ScinGlass", physStandTub, physGlassScin, OpticsPmtSurfaceDD);
 
-    G4LogicalBorderSurface* ShellScin = new G4LogicalBorderSurface("ShellScin", physShell, physStandTub, OpticsPmtSurfaceDM);
+    G4LogicalBorderSurface* ShellScin = new G4LogicalBorderSurface("ShellScin", physStandTub, physShell,  TiOSurface);
+    //G4LogicalSkinSurface* ShellScin = new G4LogicalSkinSurface("logicPmtSurface", logicStandTub, OpticsPmtSurfaceDM);
 
-    G4LogicalBorderSurface* BottomScin = new G4LogicalBorderSurface("BottomScin", physBottom, physStandTub, OpticsPmtSurfaceDM);
+    G4LogicalBorderSurface* BottomScin = new G4LogicalBorderSurface("BottomScin", physStandTub, physBottom,  TiOSurface);
 
-    G4LogicalBorderSurface* GlueGlass1 = new G4LogicalBorderSurface("GlueGlass1", PhysGluePmt, physGlassScin, OpticsPmtSurfaceDD);
+    G4LogicalBorderSurface* GlueGlass1 = new G4LogicalBorderSurface("GlueGlass1", physGlassScin, PhysGluePmt,  OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* GlueGlass = new G4LogicalBorderSurface("GlueGlass", PhysGluePmt, PhysWinPmt, OpticsPmtSurfaceDD);
 
     G4LogicalBorderSurface* PmtGlass = new G4LogicalBorderSurface("PmtGlass", PhysWinPmt, PhysPmt, OpPmtSurfaceNew);
+
+    //G4LogicalBorderSurface* BottomWHoleScin = new G4LogicalBorderSurface("BottomWHoleScin",  physStandTub, physBottomPmt, OpticsPmtSurfaceDM);
+
+    G4LogicalBorderSurface* BottomWHoleGlassScin = new G4LogicalBorderSurface("BottomWHoleGlassScin",  physGlassScin, physBottomPmt, TeflonSurface);
     
     
 ////**********NEW DETECTOR*********////////
@@ -709,40 +776,70 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     G4RotationMatrix* rotMatr1 = new G4RotationMatrix();
     rotMatr1->rotateY(M_PI/2.0);
 
-    //creating shell for hexagon
+    //creating shell without hole for hexagon
     G4double layerNew = 200.0*um;
-    G4double forcut = layerNew;
     G4double sizeNew = size + 2.0*layerNew/sqrt(3.0);
-    G4double layerSizeX = trdSizeX + 2.0*layerNew;
+    G4double layerSizeX = trdSizeX + layerNew;
     G4double layerSizeY1 = 2.0 * sizeNew;
     G4double layerSizeY2 = sizeNew;
     G4double layerSizeZ = sizeNew * sqrt(3.0)/2.0;
-    
+
     G4ThreeVector position22 = G4ThreeVector(2.0*um, 2.0*um, layerSizeZ - 2.0*um);
     G4Transform3D tr22 = G4Transform3D(rotMatr2, position2);
-    
+
     G4Trd* solidLayerAndHex1 = new G4Trd("solidLayerAndHex1", layerSizeX / 2.0, layerSizeX / 2.0, layerSizeY2 / 2.0, layerSizeY1 / 2.0, layerSizeZ / 2.0);
-    
+
     G4Trd* solidLayerAndHex2 = new G4Trd("solidLayerAndHex2", layerSizeX / 2.0, layerSizeX / 2.0, layerSizeY1 / 2.0, layerSizeY2 / 2.0, layerSizeZ / 2.0);
-    
+
     G4MultiUnion* solidLayerAndHex= new G4MultiUnion("solidLayerAndHex");
 
     solidLayerAndHex->AddNode(*solidLayerAndHex1, tr1);
     solidLayerAndHex->AddNode(*solidLayerAndHex2, tr22);
     solidLayerAndHex->Voxelize();
 
-    G4VSolid* solidLayer1 = new G4SubtractionSolid("solidLayer1", solidLayerAndHex, solidHex, rotMatr, G4ThreeVector(0.0, 0.0, 0.0));
+    G4VSolid* solidLayer1 = new G4SubtractionSolid("solidLayer1", solidLayerAndHex, solidHex, rotMatr, G4ThreeVector(0.0, -layerNew/2.0, 0.0));
+
+    G4LogicalVolume* logicLayer1 = new G4LogicalVolume(solidLayer1, Al, "logicLayer1");
+
+    G4VPhysicalVolume* physLayer1 = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, 0.0), logicLayer1, "physLayer1", logWorld, false, 0, 0);
+
+    //logicLayer1->SetVisAttributes(GSolid);
+
+    //creating shell with hole for hexagon
+
+    //G4double layerNew = 200.0*um;
+    G4double forcut = layerNew;
+    //G4double sizeNew2 = size + 2.0*layerNew/sqrt(3.0);
+    G4double layerSizeX2 = layerNew;
+    //G4double layerSizeY1 = 2.0 * sizeNew;
+    //G4double layerSizeY2 = sizeNew;
+    //G4double layerSizeZ = sizeNew * sqrt(3.0)/2.0;
+    
+    G4Trd* solidLayerAndHex3 = new G4Trd("solidLayerAndHex3", layerSizeX2 / 2.0, layerSizeX2 / 2.0, layerSizeY2 / 2.0, layerSizeY1 / 2.0, layerSizeZ / 2.0);
+    
+    G4Trd* solidLayerAndHex4 = new G4Trd("solidLayerAndHex4", layerSizeX2 / 2.0, layerSizeX2 / 2.0, layerSizeY1 / 2.0, layerSizeY2 / 2.0, layerSizeZ / 2.0);
+    
+    G4MultiUnion* solidLayerAndHexNew= new G4MultiUnion("solidLayerAndHexNew");
+
+    solidLayerAndHexNew->AddNode(*solidLayerAndHex3, tr1);
+    solidLayerAndHexNew->AddNode(*solidLayerAndHex4, tr22);
+    solidLayerAndHexNew->Voxelize();
+
+    //G4VSolid* solidLayer2 = new G4SubtractionSolid("solidLayer2", solidLayerAndHex, solidHex, rotMatr, G4ThreeVector(0.0, 0.0, 0.0));
 
     //creating hole inside the hexagon's shell'
-    G4Tubs* solidCutout1 = new G4Tubs("solidCutout1", InRadSizeSide, OutRadSizeSide + 200*um, forcut/2.0, 0.0, 2.0 * M_PI);
+    G4Box* solidCutout1 = new G4Box("solidCutout1", sidePmt/2.0 + 200.0*um, sidePmt/2.0 + 200*um, sidePmt/2.0 + 200.0*um);
 
-    G4VSolid* solidLayer = new G4SubtractionSolid("solidLayer", solidLayer1, solidCutout1, rotMatrY, G4ThreeVector(layerSizeX/2.0 - forcut/2.0, 0.0, OutRadSizeSide/2.0));
+    G4RotationMatrix* rotate = new G4RotationMatrix();
+    rotate->rotateY(0.0);
 
-    G4LogicalVolume* logicLayer = new G4LogicalVolume(solidLayer, Al, "logicLayer");
+    G4VSolid* solidLayer2 = new G4SubtractionSolid("solidLayer2", solidLayerAndHexNew, solidCutout1, rotate, G4ThreeVector(0.0, 0.0, 3.0*(sidePmt + 200*um)/4.0));
 
-    G4VPhysicalVolume* physLayer = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, 0.0), logicLayer, "physLayer", logWorld, false, 0, 0);
+    G4LogicalVolume* logicLayer2 = new G4LogicalVolume(solidLayer2, Al, "logicLayer2");
+
+    G4VPhysicalVolume* physLayer2 = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, layerSizeX/2.0), logicLayer2, "physLayer2", logWorld, false, 0, 0);
     
-    //logicLayer->SetVisAttributes(GSolid);
+    //logicLayer2->SetVisAttributes(RSolid);
     
     G4VPhysicalVolume* physHex = new G4PVPlacement(rotMatr1, G4ThreeVector(3.0*layerSizeX/2.0 + step, 0.0, 0.0), logicHex, "physHex", logWorld, false, 0, 0);
     
@@ -764,16 +861,18 @@ G4VPhysicalVolume* LcDetectorConstruction::Construct(){
     G4LogicalSkinSurface* logicPmtSurface = new G4LogicalSkinSurface("logicPmtSurface", logicPmtNew, OpticsPmtSurfaceDD);
 
     //Optical properties between physical volumes for new detector
-   G4LogicalBorderSurface* HexLayer = new G4LogicalBorderSurface("HexLayer", physLayer, physHex, OpticsPmtSurfaceDM);
+    G4LogicalBorderSurface* HexLayer1 = new G4LogicalBorderSurface("HexLayer1", physHex, physLayer1, ESRSurface);
 
-    G4LogicalBorderSurface* GlassScinNew = new G4LogicalBorderSurface("GlueScinNew", PhysGluePmtNew, physHex, OpticsPmtSurfaceDD);
+    G4LogicalBorderSurface* HexLayer2 = new G4LogicalBorderSurface("HexLayer2", physHex, physLayer2, TeflonSurface);
 
-    G4LogicalBorderSurface* PmtWinshell = new G4LogicalBorderSurface("GlueScinNew", PhysWinPmtNew, physLayer, OpticsPmtSurfaceDD);
+    G4LogicalBorderSurface* GlassScinNew = new G4LogicalBorderSurface("GlueScinNew", physHex, PhysGluePmtNew, OpticsPmtSurfaceDD);
+
+    ///////G4LogicalBorderSurface* PmtWinshell = new G4LogicalBorderSurface("GlueScinNew", PhysWinPmtNew, physLayer, OpticsPmtSurfaceDD);
     
-    G4LogicalBorderSurface* GlueShell = new G4LogicalBorderSurface("GlueShell", PhysGluePmtNew, physLayer, OpticsPmtSurfaceDM);
+    ////////G4LogicalBorderSurface* GlueShell = new G4LogicalBorderSurface("GlueShell", PhysGluePmtNew, physLayer, OpticsPmtSurfaceDM);
 
     
-    //G4LogicalBorderSurface* PmtShell = new G4LogicalBorderSurface("PmtShell", PhysPmtNew, physLayer, OpticsPmtSurfaceDM);
+    /////////G4LogicalBorderSurface* PmtShell = new G4LogicalBorderSurface("PmtShell", PhysPmtNew, physLayer, OpticsPmtSurfaceDM);
 
     G4LogicalBorderSurface* GlueGlassNew2 = new G4LogicalBorderSurface("GlueGlassNew2", PhysGluePmtNew, PhysWinPmtNew, OpticsPmtSurfaceDD);
 
